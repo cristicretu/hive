@@ -7,6 +7,7 @@ import { getConfig } from '../lib/config.js';
 import { generateSlug } from '../lib/utils.js';
 import { formatDistanceToNow } from 'date-fns';
 import * as pathModule from 'path';
+import { openInEditor, EditorType } from '../lib/editor.js';
 
 interface InteractiveProps {
   path?: string;
@@ -75,6 +76,18 @@ export default function Interactive({ path }: InteractiveProps) {
     } else if ((key.return || input === ' ' || input === 'x') && tasks.length > 0) {
       // Complete/archive the selected task
       handleCompleteTask(tasks[selectedIndex]);
+    } else if (input === 'o' && tasks.length > 0) {
+      // Open selected task in editor
+      handleOpenTask(tasks[selectedIndex]);
+    } else if (input === 'c' && tasks.length > 0) {
+      // Open in Cursor
+      handleOpenTask(tasks[selectedIndex], 'cursor');
+    } else if (input === 'v' && tasks.length > 0) {
+      // Open in VS Code
+      handleOpenTask(tasks[selectedIndex], 'code');
+    } else if (input === 'a' && tasks.length > 0) {
+      // Open with Claude
+      handleOpenTask(tasks[selectedIndex], 'claude');
     }
   });
 
@@ -92,6 +105,16 @@ export default function Interactive({ path }: InteractiveProps) {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete task');
+    }
+  };
+
+  const handleOpenTask = (task: Task, editor?: EditorType) => {
+    try {
+      const config = getConfig();
+      const editorToUse = editor || config.defaultEditor;
+      openInEditor(task.worktreePath, editorToUse);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to open editor');
     }
   };
 
@@ -217,7 +240,12 @@ export default function Interactive({ path }: InteractiveProps) {
       {/* Footer / Keyboard shortcuts */}
       <Box borderStyle="single" borderColor="gray" paddingX={1} marginTop={1}>
         <Text dimColor>
-          [n] New  [↑↓/jk] Navigate  [x/space/enter] Complete  [q] Quit
+          [n] New  [↑↓/jk] Navigate  [x/space/enter] Complete
+        </Text>
+      </Box>
+      <Box borderStyle="single" borderColor="gray" paddingX={1} marginTop={0}>
+        <Text dimColor>
+          [o] Open  [c] Cursor  [v] VS Code  [a] Claude  [q] Quit
         </Text>
       </Box>
     </Box>
