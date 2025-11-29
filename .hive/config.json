@@ -1,0 +1,5 @@
+{
+	"defaultBaseBranch": "main",
+	"defaultEditor": "code",
+	"worktreeDir": ".worktrees"
+}

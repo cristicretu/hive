@@ -9,6 +9,7 @@ import OpenCommand from './commands/open.js';
 import DiffCommand from './commands/diff.js';
 import MergeCommand from './commands/merge.js';
 import DropCommand from './commands/drop.js';
+import InteractiveCommand from './commands/interactive.js';
 
 const cli = meow(
 	`
@@ -112,7 +113,8 @@ switch (command) {
 		component = <DropCommand task={args[0]} force={flags.force} path={flags.path} />;
 		break;
 	default:
-		component = <Cli path={flags.path} />;
+		// Default to interactive mode when no command specified
+		component = <InteractiveCommand path={flags.path} />;
 		break;
 }
 
