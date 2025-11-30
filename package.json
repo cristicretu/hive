@@ -1,49 +1,16 @@
 {
-  "name": "@hive/cli",
-  "version": "0.1.0",
-  "description": "Parallel AI Agent Workspaces using git worktrees",
-  "type": "module",
-  "bin": {
-    "hive": "./dist/index.js"
-  },
-  "scripts": {
-    "dev": "tsup --watch",
-    "build": "tsup",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build",
-    "hive": "node dist/index.js"
-  },
-  "keywords": [
-    "git",
-    "worktree",
-    "ai",
-    "parallel",
-    "cli",
-    "tui"
+  "name": "hive-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
   ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "ink": "^5.0.1",
-    "react": "^18.3.1",
-    "meow": "^13.2.0",
-    "simple-git": "^3.27.0",
-    "chalk": "^5.3.0",
-    "ink-gradient": "^3.0.0",
-    "ink-spinner": "^5.0.0",
-    "ink-text-input": "^6.0.0",
-    "date-fns": "^4.1.0",
-    "slugify": "^1.6.6",
-    "conf": "^13.0.1"
+  "scripts": {
+    "dev": "bun run --cwd packages/cli dev",
+    "build": "bun run --cwd packages/cli build",
+    "hive": "bun packages/cli/dist/index.js"
   },
   "devDependencies": {
-    "@types/node": "^22.10.1",
-    "@types/react": "^18.3.12",
-    "typescript": "^5.7.2",
-    "tsup": "^8.3.5",
-    "vitest": "^2.1.8"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "typescript": "^5.7.2"
   }
 }

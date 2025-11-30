@@ -2,3 +2,13 @@ node_modules
 dist
 .claude
 .hive
+
+# OS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+
+# Logs
+*.log
