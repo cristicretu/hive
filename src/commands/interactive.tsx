@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Text, Box, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import { getTasks, addTask, Task } from '../lib/tasks.js';
-import { createWorktree, getDiffStats } from '../lib/git.js';
+import { createWorktree, getDiffStats, hasUncommittedChanges } from '../lib/git.js';
 import { getConfig } from '../lib/config.js';
 import { generateSlug } from '../lib/utils.js';
 import { formatDistanceToNow } from 'date-fns';
 import * as pathModule from 'path';
 import { openInEditor, EditorType } from '../lib/editor.js';
+import MergeCommand from './merge.js';
 
 interface InteractiveProps {
   path?: string;
 }
 
-type Mode = 'view' | 'create' | 'settings';
+type Mode = 'view' | 'create' | 'settings' | 'merge' | 'confirmCommit';
 
 interface TaskWithStatus extends Task {
   gitStatus?: {
@@ -31,6 +32,8 @@ export default function Interactive({ path }: InteractiveProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [taskToMerge, setTaskToMerge] = useState<string | null>(null);
+  const [commitMessage, setCommitMessage] = useState('');
   const { exit } = useApp();
 
   // Auto-clear error after 3 seconds
@@ -109,6 +112,19 @@ export default function Interactive({ path }: InteractiveProps) {
       return;
     }
 
+    if (mode === 'confirmCommit') {
+      if (key.escape) {
+        setMode('view');
+        setCommitMessage('');
+        setTaskToMerge(null);
+      }
+      return;
+    }
+
+    if (mode === 'merge') {
+      return;
+    }
+
     // View mode controls
     if (input === 'n') {
       setMode('create');
@@ -121,8 +137,8 @@ export default function Interactive({ path }: InteractiveProps) {
     } else if (key.downArrow || input === 'j') {
       setSelectedIndex(Math.min(tasks.length - 1, selectedIndex + 1));
     } else if ((input === 'm' || input === 'x') && tasks.length > 0) {
-      // Complete/archive the selected task
-      handleCompleteTask(tasks[selectedIndex]);
+      // Merge the selected task
+      handleMergeTask(tasks[selectedIndex]);
     } else if (input === 'd' && tasks.length > 0) {
       // Drop task
       handleDropTask(tasks[selectedIndex]);
@@ -138,20 +154,47 @@ export default function Interactive({ path }: InteractiveProps) {
     }
   });
 
-  const handleCompleteTask = async (task: Task) => {
+  const handleMergeTask = async (task: Task) => {
     try {
-      const { updateTask } = await import('../lib/tasks.js');
-      await updateTask(task.slug, { status: 'merged' });
-
-      // Remove from local state
-      setTasks(tasks.filter(t => t.slug !== task.slug));
-
-      // Adjust selected index if needed
-      if (selectedIndex >= tasks.length - 1) {
-        setSelectedIndex(Math.max(0, tasks.length - 2));
+      // Check for uncommitted changes first
+      const hasChanges = await hasUncommittedChanges(task.slug);
+      if (hasChanges) {
+        // Prompt to commit changes
+        setTaskToMerge(task.slug);
+        setCommitMessage(`wip: ${task.description}`);
+        setMode('confirmCommit');
+        return;
       }
+
+      setTaskToMerge(task.slug);
+      setMode('merge');
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Failed to complete task');
+      showError(err instanceof Error ? err.message : 'Failed to check task status');
+    }
+  };
+
+  const handleCommitAndMerge = async () => {
+    if (!taskToMerge) return;
+
+    try {
+      const task = tasks.find(t => t.slug === taskToMerge);
+      if (!task) return;
+
+      // Run git commands in the worktree
+      const { execSync } = await import('child_process');
+      const worktreePath = task.worktreePath;
+
+      // Add all changes and commit
+      execSync('git add -A', { cwd: worktreePath });
+      execSync(`git commit -m "${commitMessage.replace(/"/g, '\\"')}"`, { cwd: worktreePath });
+
+      // Now proceed to merge
+      setMode('merge');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to commit changes');
+      setMode('view');
+      setTaskToMerge(null);
+      setCommitMessage('');
     }
   };
 
@@ -214,6 +257,78 @@ export default function Interactive({ path }: InteractiveProps) {
   }
 
   const repoName = path ? path.split('/').pop() : 'current directory';
+
+  // Commit confirmation view
+  if (mode === 'confirmCommit' && taskToMerge) {
+    const task = tasks.find(t => t.slug === taskToMerge);
+    if (!task) return null;
+
+    return (
+      <Box flexDirection="column">
+        <Box borderStyle="single" borderColor="cyan">
+          <Text bold> 🐝 HIVE ─ Commit Changes </Text>
+        </Box>
+
+        <Box flexDirection="column" paddingX={2} paddingY={1}>
+          <Box marginBottom={1}>
+            <Text bold>Task: </Text>
+            <Text color="cyan">{task.slug}</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text dimColor>{task.description}</Text>
+          </Box>
+
+          <Box marginBottom={1}>
+            <Text color="yellow">⚠ Task has uncommitted changes</Text>
+          </Box>
+
+          <Box marginBottom={1}>
+            <Text>Commit message: </Text>
+            <TextInput
+              value={commitMessage}
+              onChange={setCommitMessage}
+              onSubmit={handleCommitAndMerge}
+            />
+          </Box>
+
+          <Box marginTop={1}>
+            <Text dimColor>enter:commit and merge  esc:cancel</Text>
+          </Box>
+        </Box>
+
+        <Box borderStyle="single" borderColor="cyan">
+          <Text> </Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Merge view
+  if (mode === 'merge' && taskToMerge) {
+    return <MergeCommand
+      task={taskToMerge}
+      noDelete={false}
+      onCancel={async () => {
+        // Return to view mode and reload tasks
+        setMode('view');
+        setTaskToMerge(null);
+
+        // Reload tasks to refresh the list
+        try {
+          const allTasks = await getTasks();
+          const activeTasks = allTasks.filter(t => t.status === 'active');
+          setTasks(activeTasks);
+
+          // Adjust selected index if needed
+          if (selectedIndex >= activeTasks.length) {
+            setSelectedIndex(Math.max(0, activeTasks.length - 1));
+          }
+        } catch (err) {
+          showError(err instanceof Error ? err.message : 'Failed to reload tasks');
+        }
+      }}
+    />;
+  }
 
   // Settings view
   if (mode === 'settings') {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, Box, useInput, useApp } from 'ink';
+import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import chalk from 'chalk';
 import { getTask, updateTask } from '../lib/tasks.js';
@@ -10,16 +11,19 @@ import {
 	hasUncommittedChanges,
 	removeWorktree,
 	abortMerge,
+	listBranches,
 } from '../lib/git.js';
 
 interface Props {
 	task: string;
 	noDelete?: boolean;
+	onCancel?: () => void;
 }
 
 type Status =
 	| 'loading'
 	| 'checking'
+	| 'selectBranch'
 	| 'confirming'
 	| 'merging'
 	| 'success'
@@ -34,17 +38,20 @@ interface DiffStatsData {
 
 /**
  * Merge Command
- * Merges a task branch back into main and optionally removes the worktree
+ * Merges a task branch into a selected target branch with autocomplete
  */
-export default function MergeCommand({ task, noDelete = false }: Props) {
+export default function MergeCommand({ task, noDelete = false, onCancel }: Props) {
 	const { exit } = useApp();
 	const [status, setStatus] = useState<Status>('loading');
 	const [errorMessage, setErrorMessage] = useState<string>('');
 	const [taskDescription, setTaskDescription] = useState<string>('');
 	const [diffStats, setDiffStats] = useState<DiffStatsData | null>(null);
 	const [conflicts, setConflicts] = useState<string[]>([]);
-	const [baseBranch, setBaseBranch] = useState<string>('');
 	const [taskBranch, setTaskBranch] = useState<string>('');
+	const [targetBranch, setTargetBranch] = useState<string>('');
+	const [branchInput, setBranchInput] = useState<string>('');
+	const [allBranches, setAllBranches] = useState<string[]>([]);
+	const [selectedBranchIndex, setSelectedBranchIndex] = useState<number>(0);
 
 	useEffect(() => {
 		async function loadTaskInfo() {
@@ -70,11 +77,6 @@ export default function MergeCommand({ task, noDelete = false }: Props) {
 				setTaskDescription(taskData.description);
 				setTaskBranch(taskData.branch);
 
-				// Get base branch from config
-				const config = getConfig();
-				const base = config.defaultBaseBranch;
-				setBaseBranch(base);
-
 				// Check for uncommitted changes
 				setStatus('checking');
 				const hasChanges = await hasUncommittedChanges(task);
@@ -87,16 +89,20 @@ export default function MergeCommand({ task, noDelete = false }: Props) {
 					return;
 				}
 
-				// Get diff statistics
-				const stats = await getDiffStats(task, base);
-				setDiffStats({
-					totalFiles: stats.totalFiles,
-					totalInsertions: stats.totalInsertions,
-					totalDeletions: stats.totalDeletions,
-				});
+				// Load all branches
+				const branches = await listBranches();
+				setAllBranches(branches);
 
-				// Show confirmation
-				setStatus('confirming');
+				// Get default branch from config for selection index
+				const config = getConfig();
+				const defaultBranch = config.defaultBaseBranch;
+
+				// Find default branch index but don't prefill input
+				const defaultIndex = branches.findIndex(b => b === defaultBranch);
+				setSelectedBranchIndex(defaultIndex >= 0 ? defaultIndex : 0);
+
+				// Move to branch selection
+				setStatus('selectBranch');
 			} catch (error) {
 				if (error instanceof Error) {
 					setErrorMessage(error.message);
@@ -110,29 +116,95 @@ export default function MergeCommand({ task, noDelete = false }: Props) {
 		loadTaskInfo();
 	}, [task]);
 
-	// Handle user input for confirmation
+	// Get filtered branches based on input
+	const filteredBranches = allBranches.filter(branch =>
+		branch.toLowerCase().includes(branchInput.toLowerCase())
+	);
+
+	// Handle user input for branch selection
 	useInput(
 		(input, key) => {
-			if (status === 'confirming') {
+			if (status === 'selectBranch') {
+				if (key.return) {
+					// User pressed enter - proceed with selected or typed branch
+					handleBranchSelected();
+				} else if (key.upArrow) {
+					setSelectedBranchIndex(Math.max(0, selectedBranchIndex - 1));
+				} else if (key.downArrow) {
+					setSelectedBranchIndex(Math.min(filteredBranches.length - 1, selectedBranchIndex + 1));
+				} else if (key.escape) {
+					if (onCancel) {
+						onCancel();
+					} else {
+						exit();
+					}
+				}
+			} else if (status === 'confirming') {
 				if (input === 'y' || input === 'Y') {
 					handleMerge();
 				} else if (input === 'n' || input === 'N' || key.escape) {
-					exit();
+					if (onCancel) {
+						onCancel();
+					} else {
+						exit();
+					}
 				}
 			} else if (status === 'conflict' || status === 'success' || status === 'error') {
 				// Any key to exit after final status
-				exit();
+				if (onCancel) {
+					onCancel();
+				} else {
+					exit();
+				}
 			}
 		},
-		{ isActive: status === 'confirming' || status === 'conflict' || status === 'success' || status === 'error' }
+		{ isActive: true }
 	);
+
+	async function handleBranchSelected() {
+		// Use selected branch from list, or create new if input doesn't match
+		let selectedBranch: string;
+
+		if (filteredBranches.length > 0 && filteredBranches[selectedBranchIndex]) {
+			selectedBranch = filteredBranches[selectedBranchIndex];
+		} else if (branchInput.trim()) {
+			// User typed a new branch name
+			selectedBranch = branchInput.trim();
+		} else {
+			setErrorMessage('Please enter a branch name');
+			setStatus('error');
+			return;
+		}
+
+		setTargetBranch(selectedBranch);
+
+		try {
+			// Get diff statistics against target branch
+			const stats = await getDiffStats(task, selectedBranch);
+			setDiffStats({
+				totalFiles: stats.totalFiles,
+				totalInsertions: stats.totalInsertions,
+				totalDeletions: stats.totalDeletions,
+			});
+
+			// Show confirmation
+			setStatus('confirming');
+		} catch (error) {
+			if (error instanceof Error) {
+				setErrorMessage(error.message);
+			} else {
+				setErrorMessage(`Failed to get diff stats: ${String(error)}`);
+			}
+			setStatus('error');
+		}
+	}
 
 	async function handleMerge() {
 		setStatus('merging');
 
 		try {
 			// Attempt merge
-			const result = await mergeBranch(task, baseBranch);
+			const result = await mergeBranch(task, targetBranch);
 
 			if (!result.success) {
 				// Merge conflicts detected
@@ -201,8 +273,74 @@ export default function MergeCommand({ task, noDelete = false }: Props) {
 		);
 	}
 
+	// Render branch selection
+	if (status === 'selectBranch') {
+		return (
+			<Box flexDirection="column">
+				<Box borderStyle="single" borderColor="cyan">
+					<Text bold> 🐝 HIVE ─ Merge Task </Text>
+				</Box>
+
+				<Box flexDirection="column" paddingX={2} paddingY={1}>
+					<Box marginBottom={1}>
+						<Text bold>Task: </Text>
+						<Text color="cyan">{task}</Text>
+					</Box>
+					<Box marginBottom={1}>
+						<Text dimColor>{taskDescription}</Text>
+					</Box>
+
+					<Box marginBottom={1}>
+						<Text bold>Select target branch to merge into:</Text>
+					</Box>
+
+					<Box marginBottom={1}>
+						<Text>Branch: </Text>
+						<TextInput
+							value={branchInput}
+							onChange={(value) => {
+								setBranchInput(value);
+								setSelectedBranchIndex(0);
+							}}
+							onSubmit={handleBranchSelected}
+						/>
+					</Box>
+
+					{filteredBranches.length > 0 && (
+						<Box flexDirection="column" marginBottom={1} marginLeft={2}>
+							{filteredBranches.slice(0, 10).map((branch, index) => (
+								<Text key={branch} color={index === selectedBranchIndex ? 'cyan' : 'gray'}>
+									{index === selectedBranchIndex ? '► ' : '  '}
+									{branch}
+								</Text>
+							))}
+							{filteredBranches.length > 10 && (
+								<Text dimColor>  ... and {filteredBranches.length - 10} more</Text>
+							)}
+						</Box>
+					)}
+
+					{filteredBranches.length === 0 && branchInput && (
+						<Box marginBottom={1} marginLeft={2}>
+							<Text color="yellow">New branch will be created: {branchInput}</Text>
+						</Box>
+					)}
+
+					<Box marginTop={1}>
+						<Text dimColor>↑↓:navigate  enter:select  esc:back</Text>
+					</Box>
+				</Box>
+
+				<Box borderStyle="single" borderColor="cyan">
+					<Text> </Text>
+				</Box>
+			</Box>
+		);
+	}
+
 	// Render confirmation prompt
 	if (status === 'confirming' && diffStats) {
+		const branchExists = allBranches.includes(targetBranch);
 		return (
 			<Box flexDirection="column">
 				<Box marginBottom={1}>
@@ -237,7 +375,8 @@ export default function MergeCommand({ task, noDelete = false }: Props) {
 						<Text bold>Branch: </Text>
 						<Text color="magenta">{taskBranch}</Text>
 						<Text> → </Text>
-						<Text color="magenta">{baseBranch}</Text>
+						<Text color="magenta">{targetBranch}</Text>
+						{!branchExists && <Text color="yellow"> (new)</Text>}
 					</Text>
 					{!noDelete && (
 						<Text dimColor>Worktree will be removed after successful merge</Text>
@@ -345,7 +484,7 @@ export default function MergeCommand({ task, noDelete = false }: Props) {
 					</Box>
 					<Text color="magenta">{taskBranch}</Text>
 					<Text> → </Text>
-					<Text color="magenta">{baseBranch}</Text>
+					<Text color="magenta">{targetBranch}</Text>
 				</Box>
 				<Box>
 					<Box width={20}>

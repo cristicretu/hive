@@ -10,6 +10,9 @@ you know the deal. you want 3 agents working on 3 tasks. but they all stomp on e
 
 hive fixes this. git worktrees + a nice cli. each agent gets its own branch, its own directory, its own sandbox. work in parallel. merge what works. drop what doesn't.
 
+[anthropic recommends](https://www.anthropic.com/engineering/claude-code-best-practices) using git worktrees for parallel claude code sessions. this skips the manual work.
+
+
 <img src="./media/cli.png" />
 
 ## install

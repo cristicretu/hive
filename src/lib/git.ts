@@ -510,6 +510,28 @@ export async function abortMerge(): Promise<void> {
 }
 
 /**
+ * List all local branches in the repository
+ * @returns Array of branch names
+ */
+export async function listBranches(): Promise<string[]> {
+  try {
+    const git = getGit();
+
+    if (!(await isGitRepository())) {
+      throw new GitError('Not a git repository');
+    }
+
+    const branches = await git.branchLocal();
+    return branches.all;
+  } catch (error) {
+    if (error instanceof GitError) {
+      throw error;
+    }
+    throw new GitError('Failed to list branches', error);
+  }
+}
+
+/**
  * Get list of changed files in a worktree
  * @param slug - Unique identifier for the worktree
  * @returns Object containing categorized file changes
