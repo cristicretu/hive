@@ -6,12 +6,22 @@ Hive simplifies parallel AI coding sessions by removing the complexity that deve
 
 Built on git's [worktree](https://git-scm.com/docs/git-worktree) feature and a beautiful [Ink](https://github.com/vadimdemedes/ink) TUI, Hive ensures your AI coding sessions are both isolated and manageable by default.
 
-For the source code, check out the [GitHub](https://github.com/YOURUSER/hive).
+For the source code, check out the [GitHub](https://github.com/cristicretu/hive).
 
 ## Installation
 
 ```bash
-npm i -g hive-cli
+# npm
+npm i -g @cristicretu/hive-cli
+
+# bun
+bun add -g @cristicretu/hive-cli
+
+# pnpm
+pnpm add -g @cristicretu/hive-cli
+
+# yarn
+yarn global add @cristicretu/hive-cli
 ```
 
 ## Usage

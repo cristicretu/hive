@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import OptionsDropdown from '../components/OptionsDropdown';
+import InstallCommand from '../components/InstallCommand';
 ---
 
 <Layout title="Hive">
@@ -39,14 +40,12 @@ import OptionsDropdown from '../components/OptionsDropdown';
       </p>
 
       <p>
-        For the source code, check out the <a href="https://github.com/YOURUSER/hive" class="text-blue-600 hover:underline">GitHub</a>.
+        For the source code, check out the <a href="https://github.com/cristicretu/hive" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">GitHub</a>.
       </p>
 
       <!-- Installation -->
       <h2 class="font-medium pt-4">Installation</h2>
-      <div class="bg-gray-50 rounded-lg p-4 font-mono text-[13px]">
-        <span class="text-pink-600">npm</span> <span class="text-blue-600">i -g</span> hive-cli
-      </div>
+      <InstallCommand client:load />
 
       <!-- Usage -->
       <h2 class="font-medium pt-4">Usage</h2>

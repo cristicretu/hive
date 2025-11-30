@@ -9,7 +9,7 @@ interface OptionsDropdownProps {
 export default function OptionsDropdown({
   githubUrl = "https://github.com/cristicretu/hive",
   twitterUrl = "https://x.com/cristicrtu",
-  npmUrl = "https://www.npmjs.com/package/hive-cli",
+  npmUrl = "https://www.npmjs.com/package/@cristicretu/hive-cli",
 }: OptionsDropdownProps) {
   const handleCopyMarkdown = async () => {
     const markdown = await fetch("/llms.txt").then((r) => r.text());

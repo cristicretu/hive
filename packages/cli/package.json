@@ -1,5 +1,5 @@
 {
-  "name": "hive-cli",
+  "name": "@cristicretu/hive-cli",
   "version": "0.1.0",
   "description": "Parallel AI agent workspaces using git worktrees",
   "type": "module",
