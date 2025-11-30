@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, Box, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import { getTasks, addTask, Task } from '../lib/tasks.js';
-import { createWorktree } from '../lib/git.js';
+import { createWorktree, getDiffStats } from '../lib/git.js';
 import { getConfig } from '../lib/config.js';
 import { generateSlug } from '../lib/utils.js';
 import { formatDistanceToNow } from 'date-fns';
@@ -15,8 +15,16 @@ interface InteractiveProps {
 
 type Mode = 'view' | 'create';
 
+interface TaskWithStatus extends Task {
+  gitStatus?: {
+    files: number;
+    insertions: number;
+    deletions: number;
+  };
+}
+
 export default function Interactive({ path }: InteractiveProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TaskWithStatus[]>([]);
   const [mode, setMode] = useState<Mode>('view');
   const [newTaskInput, setNewTaskInput] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -36,13 +44,36 @@ export default function Interactive({ path }: InteractiveProps) {
     }
   }, [path]);
 
-  // Load tasks
+  // Load tasks immediately, then fetch git status in background
   useEffect(() => {
     const loadTasks = async () => {
       try {
         const allTasks = await getTasks();
-        setTasks(allTasks.filter(t => t.status === 'active'));
+        const activeTasks = allTasks.filter(t => t.status === 'active');
+
+        setTasks(activeTasks);
         setLoading(false);
+
+        const tasksWithStatus = await Promise.all(
+          activeTasks.map(async (task) => {
+            try {
+              const diffStats = await getDiffStats(task.slug);
+              return {
+                ...task,
+                gitStatus: {
+                  files: diffStats.totalFiles,
+                  insertions: diffStats.totalInsertions,
+                  deletions: diffStats.totalDeletions,
+                },
+              };
+            } catch {
+              return task;
+            }
+          })
+        );
+
+        // Update with status
+        setTasks(tasksWithStatus);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load tasks');
         setLoading(false);
@@ -50,8 +81,6 @@ export default function Interactive({ path }: InteractiveProps) {
     };
 
     loadTasks();
-    const interval = setInterval(loadTasks, 2000);
-    return () => clearInterval(interval);
   }, []);
 
   // Keyboard navigation
@@ -204,12 +233,13 @@ export default function Interactive({ path }: InteractiveProps) {
                     </Text>
                     <Text dimColor> · {timeAgo}</Text>
                   </Box>
-                  <Box marginLeft={4}>
-                    <Text dimColor>{task.description}</Text>
-                  </Box>
-                  <Box marginLeft={4}>
-                    <Text dimColor>{task.worktreePath}</Text>
-                  </Box>
+                  {task.gitStatus && task.gitStatus.files > 0 && (
+                    <Box marginLeft={4}>
+                      <Text dimColor>
+                        +{task.gitStatus.insertions} -{task.gitStatus.deletions} · {task.gitStatus.files} {task.gitStatus.files !== 1 ? 'files' : 'file'}
+                      </Text>
+                    </Box>
+                  )}
                 </Box>
               </Box>
             );
