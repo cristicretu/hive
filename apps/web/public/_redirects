@@ -1,0 +1,2 @@
+# Redirect www to non-www (if using custom domain)
+# https://www.hive.cretu.dev/* https://hive.cretu.dev/:splat 301

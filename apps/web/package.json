@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
+    "@astrojs/sitemap": "^3.6.0",
     "@base-ui-components/react": "^1.0.0-beta.7",
     "@tailwindcss/vite": "^4.1.17",
     "@types/react": "^19.2.7",
