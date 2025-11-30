@@ -13,7 +13,7 @@ interface InteractiveProps {
   path?: string;
 }
 
-type Mode = 'view' | 'create';
+type Mode = 'view' | 'create' | 'settings';
 
 interface TaskWithStatus extends Task {
   gitStatus?: {
@@ -93,27 +93,36 @@ export default function Interactive({ path }: InteractiveProps) {
       return;
     }
 
+    if (mode === 'settings') {
+      if (key.escape) {
+        setMode('view');
+      }
+      return;
+    }
+
     // View mode controls
     if (input === 'n') {
       setMode('create');
+    } else if (input === 's') {
+      setMode('settings');
     } else if (input === 'q' || key.escape) {
       exit();
     } else if (key.upArrow || input === 'k') {
       setSelectedIndex(Math.max(0, selectedIndex - 1));
     } else if (key.downArrow || input === 'j') {
       setSelectedIndex(Math.min(tasks.length - 1, selectedIndex + 1));
-    } else if ((key.return || input === ' ' || input === 'x') && tasks.length > 0) {
+    } else if ((input === 'm' || input === 'x') && tasks.length > 0) {
       // Complete/archive the selected task
       handleCompleteTask(tasks[selectedIndex]);
+    } else if (input === 'd' && tasks.length > 0) {
+      // Drop task
+      handleDropTask(tasks[selectedIndex]);
     } else if (input === 'o' && tasks.length > 0) {
       // Open selected task in editor
       handleOpenTask(tasks[selectedIndex]);
     } else if (input === 'c' && tasks.length > 0) {
       // Open in Cursor
       handleOpenTask(tasks[selectedIndex], 'cursor');
-    } else if (input === 'v' && tasks.length > 0) {
-      // Open in VS Code
-      handleOpenTask(tasks[selectedIndex], 'code');
     } else if (input === 'a' && tasks.length > 0) {
       // Open with Claude
       handleOpenTask(tasks[selectedIndex], 'claude');
@@ -147,6 +156,24 @@ export default function Interactive({ path }: InteractiveProps) {
     }
   };
 
+  const handleDropTask = async (task: Task) => {
+    try {
+      const { removeWorktree } = await import('../lib/git.js');
+      const { removeTask } = await import('../lib/tasks.js');
+
+      await removeWorktree(task.slug);
+      await removeTask(task.slug);
+
+      setTasks(tasks.filter(t => t.slug !== task.slug));
+
+      if (selectedIndex >= tasks.length - 1) {
+        setSelectedIndex(Math.max(0, tasks.length - 2));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to drop task');
+    }
+  };
+
   const handleCreateTask = async () => {
     if (!newTaskInput.trim()) return;
 
@@ -174,85 +201,45 @@ export default function Interactive({ path }: InteractiveProps) {
   };
 
   if (loading) {
-    return (
-      <Box>
-        <Text>Loading tasks...</Text>
-      </Box>
-    );
+    return <Text>Loading...</Text>;
   }
 
   if (error) {
+    return <Text color="red">Error: {error}</Text>;
+  }
+
+  const repoName = path ? path.split('/').pop() : 'current directory';
+
+  // Settings view
+  if (mode === 'settings') {
+    const config = getConfig();
     return (
       <Box flexDirection="column">
-        <Text color="red">Error: {error}</Text>
-        <Text dimColor>Press q to exit</Text>
+        <Box borderStyle="single" borderColor="cyan">
+          <Text bold> 🐝 HIVE ─ Settings </Text>
+        </Box>
+        <Box flexDirection="column" paddingX={2} paddingY={1}>
+          <Text dimColor>Default editor: <Text color="cyan">{config.defaultEditor}</Text></Text>
+          <Text dimColor>Worktree location: <Text color="cyan">{config.worktreeDir}</Text></Text>
+          <Box marginTop={1}>
+            <Text dimColor>esc:back</Text>
+          </Box>
+        </Box>
+        <Box borderStyle="single" borderColor="cyan">
+          <Text> </Text>
+        </Box>
       </Box>
     );
   }
 
-  return (
-    <Box flexDirection="column" padding={1}>
-      {/* Header */}
-      <Box marginBottom={1} borderStyle="round" borderColor="cyan" paddingX={2}>
-        <Text bold color="cyan">
-          🐝 HIVE - Interactive Mode
-        </Text>
-      </Box>
-
-      {path && (
-        <Box marginBottom={1}>
-          <Text dimColor>Working directory: {path}</Text>
+  // Create task view
+  if (mode === 'create') {
+    return (
+      <Box flexDirection="column">
+        <Box borderStyle="single" borderColor="cyan">
+          <Text bold> 🐝 HIVE ─ New Task </Text>
         </Box>
-      )}
-
-      {/* Tasks List */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Box marginBottom={1}>
-          <Text bold>Active Tasks ({tasks.length})</Text>
-        </Box>
-
-        {tasks.length === 0 ? (
-          <Box>
-            <Text dimColor>No active tasks. Press 'n' to create a new one.</Text>
-          </Box>
-        ) : (
-          tasks.map((task, index) => {
-            const isSelected = index === selectedIndex;
-            const timeAgo = formatDistanceToNow(new Date(task.createdAt), { addSuffix: true });
-
-            return (
-              <Box key={task.slug} marginY={0}>
-                <Text color={isSelected ? 'cyan' : 'white'}>
-                  {isSelected ? '▶ ' : '  '}
-                </Text>
-                <Text color={isSelected ? 'cyan' : 'gray'}>[ ] </Text>
-                <Box flexDirection="column">
-                  <Box>
-                    <Text bold={isSelected} color={isSelected ? 'cyan' : 'white'}>
-                      {task.slug}
-                    </Text>
-                    <Text dimColor> · {timeAgo}</Text>
-                  </Box>
-                  {task.gitStatus && task.gitStatus.files > 0 && (
-                    <Box marginLeft={4}>
-                      <Text dimColor>
-                        +{task.gitStatus.insertions} -{task.gitStatus.deletions} · {task.gitStatus.files} {task.gitStatus.files !== 1 ? 'files' : 'file'}
-                      </Text>
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            );
-          })
-        )}
-      </Box>
-
-      {/* Input mode */}
-      {mode === 'create' && (
-        <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={1} marginY={1}>
-          <Box marginBottom={1}>
-            <Text color="yellow">Create New Task</Text>
-          </Box>
+        <Box flexDirection="column" paddingX={2} paddingY={1}>
           <Box>
             <Text>Description: </Text>
             <TextInput
@@ -262,21 +249,67 @@ export default function Interactive({ path }: InteractiveProps) {
             />
           </Box>
           <Box marginTop={1}>
-            <Text dimColor>Press Enter to create, Esc to cancel</Text>
+            <Text dimColor>enter:create  esc:cancel</Text>
           </Box>
         </Box>
-      )}
-
-      {/* Footer / Keyboard shortcuts */}
-      <Box borderStyle="single" borderColor="gray" paddingX={1} marginTop={1}>
-        <Text dimColor>
-          [n] New  [↑↓/jk] Navigate  [x/space/enter] Complete
-        </Text>
+        <Box borderStyle="single" borderColor="cyan">
+          <Text> </Text>
+        </Box>
       </Box>
-      <Box borderStyle="single" borderColor="gray" paddingX={1} marginTop={0}>
-        <Text dimColor>
-          [o] Open  [c] Cursor  [v] VS Code  [a] Claude  [q] Quit
-        </Text>
+    );
+  }
+
+  // Main task list view
+  return (
+    <Box flexDirection="column">
+      <Box borderStyle="single" borderColor="cyan">
+        <Text bold> 🐝 HIVE </Text>
+      </Box>
+
+      <Box paddingX={2} paddingY={1} flexDirection="column">
+        <Text dimColor>{repoName}</Text>
+        <Text> </Text>
+
+        {tasks.length === 0 ? (
+          <Text dimColor>no tasks · press n to create</Text>
+        ) : (
+          tasks.map((task, index) => {
+            const isSelected = index === selectedIndex;
+
+            // Format time concisely
+            const now = new Date();
+            const created = new Date(task.createdAt);
+            const diffMs = now.getTime() - created.getTime();
+            const minutes = Math.floor(diffMs / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            let timeStr;
+            if (days > 0) timeStr = `${days}d`;
+            else if (hours > 0) timeStr = `${hours}h`;
+            else timeStr = `${minutes}m`;
+
+            const statusIcon = task.gitStatus && task.gitStatus.files > 0 ? '●' : '✓';
+            const statusColor = task.gitStatus && task.gitStatus.files > 0 ? 'yellow' : 'green';
+            const stats = task.gitStatus && task.gitStatus.files > 0
+              ? `+${task.gitStatus.insertions}-${task.gitStatus.deletions}`
+              : 'clean';
+
+            return (
+              <Box key={task.slug}>
+                <Text color={isSelected ? 'cyan' : 'white'}>{isSelected ? '► ' : '  '}</Text>
+                <Text color={isSelected ? 'cyan' : 'white'}>{task.slug.padEnd(20)}</Text>
+                <Text dimColor>  {timeStr.padEnd(5)}</Text>
+                <Text dimColor>  {stats.padEnd(12)}</Text>
+                <Text color={statusColor}>{statusIcon}</Text>
+              </Box>
+            );
+          })
+        )}
+      </Box>
+
+      <Box borderStyle="single" borderColor="cyan">
+        <Text dimColor> n:new o:open c:cursor a:claude m:merge d:drop s:settings q:quit </Text>
       </Box>
     </Box>
   );
