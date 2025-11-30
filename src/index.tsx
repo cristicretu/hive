@@ -9,6 +9,7 @@ import OpenCommand from './commands/open.js';
 import DiffCommand from './commands/diff.js';
 import MergeCommand from './commands/merge.js';
 import DropCommand from './commands/drop.js';
+import CleanCommand from './commands/clean.js';
 import InteractiveCommand from './commands/interactive.js';
 
 const cli = meow(
@@ -24,11 +25,17 @@ const cli = meow(
 	  diff <task>           Show differences between workspace and main branch
 	  merge <task>          Merge a hive workspace back to main branch
 	  drop <task>           Remove a hive workspace
+	  clean                 Remove stale worktrees
 
 	Global Options
 	  --path, -p            Path to git repository (defaults to current directory)
 	  --help                Show help
 	  --version             Show version
+
+	Clean Options
+	  --stale <time>        Remove tasks inactive for this duration (e.g., "7d", "14d")
+	  --force               Remove without confirmation
+	  --dry-run             Show what would be removed without removing
 
 	Examples
 	  $ hive new "add user authentication"
@@ -38,6 +45,8 @@ const cli = meow(
 	  $ hive diff my-task
 	  $ hive merge my-task
 	  $ hive drop my-task --force
+	  $ hive clean --stale 14d
+	  $ hive clean --dry-run
 	  $ hive --path /path/to/repo status
 `,
 	{
@@ -69,6 +78,12 @@ const cli = meow(
 				type: 'boolean',
 			},
 			force: {
+				type: 'boolean',
+			},
+			stale: {
+				type: 'string',
+			},
+			dryRun: {
 				type: 'boolean',
 			},
 		},
@@ -111,6 +126,9 @@ switch (command) {
 		break;
 	case 'drop':
 		component = <DropCommand task={args[0]} force={flags.force} path={flags.path} />;
+		break;
+	case 'clean':
+		component = <CleanCommand stale={flags.stale} force={flags.force} dryRun={flags.dryRun} />;
 		break;
 	default:
 		// Default to interactive mode when no command specified

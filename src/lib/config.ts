@@ -8,12 +8,18 @@ export interface HiveConfig {
   defaultBaseBranch: string;
   defaultEditor: EditorType;
   worktreeDir: string;
+  autoSymlink: boolean;
+  customSymlinks: string[];
+  autoCleanStaleDays: number | null;
 }
 
 const DEFAULT_CONFIG: HiveConfig = {
   defaultBaseBranch: 'main',
   defaultEditor: 'code',
   worktreeDir: '.worktrees',
+  autoSymlink: true,
+  customSymlinks: [],
+  autoCleanStaleDays: null,
 };
 
 const CONFIG_DIR = path.join(process.cwd(), '.hive');
@@ -48,6 +54,9 @@ export function getConfig(): HiveConfig {
     defaultBaseBranch: store.get('defaultBaseBranch'),
     defaultEditor: store.get('defaultEditor'),
     worktreeDir: store.get('worktreeDir'),
+    autoSymlink: store.get('autoSymlink'),
+    customSymlinks: store.get('customSymlinks'),
+    autoCleanStaleDays: store.get('autoCleanStaleDays'),
   };
 }
 
@@ -77,6 +86,18 @@ export function setConfig(updates: Partial<HiveConfig>): HiveConfig {
     store.set('worktreeDir', updates.worktreeDir);
   }
 
+  if (updates.autoSymlink !== undefined) {
+    store.set('autoSymlink', updates.autoSymlink);
+  }
+
+  if (updates.customSymlinks !== undefined) {
+    store.set('customSymlinks', updates.customSymlinks);
+  }
+
+  if (updates.autoCleanStaleDays !== undefined) {
+    store.set('autoCleanStaleDays', updates.autoCleanStaleDays);
+  }
+
   return getConfig();
 }
 
@@ -96,6 +117,15 @@ export function initConfig(): HiveConfig {
   }
   if (!store.has('worktreeDir')) {
     store.set('worktreeDir', DEFAULT_CONFIG.worktreeDir);
+  }
+  if (!store.has('autoSymlink')) {
+    store.set('autoSymlink', DEFAULT_CONFIG.autoSymlink);
+  }
+  if (!store.has('customSymlinks')) {
+    store.set('customSymlinks', DEFAULT_CONFIG.customSymlinks);
+  }
+  if (!store.has('autoCleanStaleDays')) {
+    store.set('autoCleanStaleDays', DEFAULT_CONFIG.autoCleanStaleDays);
   }
 
   return getConfig();

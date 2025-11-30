@@ -1,6 +1,8 @@
 import simpleGit, { SimpleGit, DiffResult } from 'simple-git';
 import path from 'path';
 import fs from 'fs/promises';
+import { createSymlinks, formatBytes, type SymlinkResult } from './symlinks.js';
+import { getConfig } from './config.js';
 
 /**
  * Interface for worktree information
@@ -140,12 +142,12 @@ async function getRepoRoot(git: SimpleGit): Promise<string> {
  * Create a new worktree
  * @param slug - Unique identifier for the worktree
  * @param baseBranch - Base branch to branch from (defaults to main/master)
- * @returns Path to the created worktree
+ * @returns Object with worktree path and symlink result
  */
 export async function createWorktree(
   slug: string,
   baseBranch?: string
-): Promise<string> {
+): Promise<{ path: string; symlinks: SymlinkResult }> {
   try {
     const git = getGit();
 
@@ -177,7 +179,15 @@ export async function createWorktree(
     // Create worktree with new branch
     await git.raw(['worktree', 'add', '-b', branchName, worktreePath, base]);
 
-    return worktreePath;
+    // Create symlinks if enabled in config
+    const config = getConfig();
+    let symlinkResult: SymlinkResult = { created: [], skipped: [], savedBytes: 0 };
+
+    if (config.autoSymlink) {
+      symlinkResult = await createSymlinks(repoRoot, worktreePath, config.customSymlinks);
+    }
+
+    return { path: worktreePath, symlinks: symlinkResult };
   } catch (error) {
     if (error instanceof GitError) {
       throw error;

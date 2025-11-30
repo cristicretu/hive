@@ -232,13 +232,13 @@ export default function Interactive({ path }: InteractiveProps) {
     try {
       const slug = generateSlug(newTaskInput);
       const config = getConfig();
-      const worktreePath = await createWorktree(slug, config.defaultBaseBranch);
+      const result = await createWorktree(slug, config.defaultBaseBranch);
 
       const task: Task = {
         slug,
         description: newTaskInput,
         branch: `hive/${slug}`,
-        worktreePath,
+        worktreePath: result.path,
         createdAt: new Date().toISOString(),
         status: 'active',
       };
@@ -247,6 +247,12 @@ export default function Interactive({ path }: InteractiveProps) {
       setTasks([...tasks, task]);
       setNewTaskInput('');
       setMode('view');
+
+      // Show symlink info if any were created
+      if (result.symlinks.created.length > 0) {
+        const { formatBytes } = await import('../lib/symlinks.js');
+        showError(`✓ Task created (saved ${formatBytes(result.symlinks.savedBytes)} via symlinks: ${result.symlinks.created.join(', ')})`);
+      }
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to create task');
     }

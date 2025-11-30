@@ -7,6 +7,7 @@ import { addTask, Task } from '../lib/tasks.js';
 import { getConfig } from '../lib/config.js';
 import { openInEditor } from '../lib/editor.js';
 import { generateSlug } from '../lib/utils.js';
+import { formatBytes } from '../lib/symlinks.js';
 
 export interface NewProps {
 	description: string;
@@ -20,6 +21,7 @@ export default function New({ description, open = false }: NewProps) {
 	const [error, setError] = useState<string>('');
 	const [slug, setSlug] = useState<string>('');
 	const [worktreePath, setWorktreePath] = useState<string>('');
+	const [symlinkInfo, setSymlinkInfo] = useState<string>('');
 
 	useEffect(() => {
 		const createTask = async () => {
@@ -32,15 +34,22 @@ export default function New({ description, open = false }: NewProps) {
 				const config = getConfig();
 
 				// Create worktree using git.ts functions
-				const path = await createWorktree(taskSlug, config.defaultBaseBranch);
-				setWorktreePath(path);
+				const result = await createWorktree(taskSlug, config.defaultBaseBranch);
+				setWorktreePath(result.path);
+
+				// Save symlink info for display
+				if (result.symlinks.created.length > 0) {
+					setSymlinkInfo(
+						`Saved ${formatBytes(result.symlinks.savedBytes)} via symlinks: ${result.symlinks.created.join(', ')}`
+					);
+				}
 
 				// Add task to tasks.json
 				const task: Task = {
 					slug: taskSlug,
 					description,
 					branch: `hive/${taskSlug}`,
-					worktreePath: path,
+					worktreePath: result.path,
 					createdAt: new Date().toISOString(),
 					status: 'active',
 				};
@@ -96,7 +105,12 @@ export default function New({ description, open = false }: NewProps) {
 
 	return (
 		<Box flexDirection="column" paddingTop={1}>
-			<Text color="green">Task created successfully!</Text>
+			<Text color="green">✓ Task created successfully!</Text>
+			{symlinkInfo && (
+				<Box marginTop={1}>
+					<Text color="cyan">{symlinkInfo}</Text>
+				</Box>
+			)}
 			<Box marginTop={1}>
 				<Box width={20}>
 					<Text color="gray">Slug:</Text>
