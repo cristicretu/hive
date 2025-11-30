@@ -26,15 +26,15 @@
     "cursor",
     "agent"
   ],
-  "author": "",
+  "author": "Cristian Cretu",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOURUSER/hive.git"
+    "url": "git+https://github.com/cristicretu/hive.git"
   },
-  "homepage": "https://github.com/YOURUSER/hive#readme",
+  "homepage": "https://github.com/cristicretu/hive#readme",
   "bugs": {
-    "url": "https://github.com/YOURUSER/hive/issues"
+    "url": "https://github.com/cristicretu/hive/issues"
   },
   "dependencies": {
     "chalk": "^5.3.0",

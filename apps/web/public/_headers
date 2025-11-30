@@ -1,4 +1,4 @@
-# All pages
+# All pages - security headers
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
@@ -15,34 +15,13 @@
 /entries/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Images
-*.png
+# Images in root
+/cover.png
   Cache-Control: public, max-age=31536000, immutable
 
-*.jpg
+/favicon.svg
   Cache-Control: public, max-age=31536000, immutable
 
-*.svg
-  Cache-Control: public, max-age=31536000, immutable
-
-*.webp
-  Cache-Control: public, max-age=31536000, immutable
-
-# Fonts
-*.woff2
-  Cache-Control: public, max-age=31536000, immutable
-
-*.woff
-  Cache-Control: public, max-age=31536000, immutable
-
-# HTML pages - cache briefly, revalidate
-/*.html
-  Cache-Control: public, max-age=0, must-revalidate
-
-/
-  Cache-Control: public, max-age=0, must-revalidate
-
-# llms.txt - cache for a day, allow stale while revalidating
+# llms.txt - cache for a day
 /llms.txt
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
-  Content-Type: text/plain; charset=utf-8
