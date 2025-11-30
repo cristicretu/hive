@@ -1,0 +1,41 @@
+# Hive
+
+Hive is a CLI tool for managing parallel AI agent workspaces using git worktrees.
+
+Hive simplifies parallel AI coding sessions by removing the complexity that developers face when running multiple agents. By eliminating branch conflicts and file stomping, it streamlines both implementation and maintenance workflows.
+
+Built on git's [worktree](https://git-scm.com/docs/git-worktree) feature and a beautiful [Ink](https://github.com/vadimdemedes/ink) TUI, Hive ensures your AI coding sessions are both isolated and manageable by default.
+
+For the source code, check out the [GitHub](https://github.com/YOURUSER/hive).
+
+## Installation
+
+```bash
+npm i -g hive-cli
+```
+
+## Usage
+
+Run `hive` in any git repository to launch the interactive TUI. Create isolated workspaces for each AI agent, then merge or drop changes as needed.
+
+```bash
+# Launch interactive mode
+hive
+
+# Create a new workspace
+hive new "add user authentication"
+
+# List all workspaces
+hive list
+
+# Merge a workspace back to main
+hive merge my-task
+```
+
+## Why
+
+Because alt-tabbing between branches is tedious and AI agents don't know how to share. [Anthropic recommends](https://www.anthropic.com/engineering/claude-code-best-practices) using git worktrees for parallel Claude Code sessions—Hive automates the manual work.
+
+## License
+
+MIT License. Do whatever you want.

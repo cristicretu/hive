@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import OptionsDropdown from '../components/OptionsDropdown';
+---
+
+<Layout title="Hive">
+  <main class="max-w-[680px] mx-auto px-12 py-32">
+    <!-- Header with title and dropdown -->
+    <header class="flex items-center justify-between mb-6">
+      <h1 class="text-[14px] font-medium">Hive</h1>
+      <OptionsDropdown client:load />
+    </header>
+
+    <!-- Hero image -->
+    <div class="rounded-lg overflow-hidden mb-8 bg-gray-100">
+      <img 
+        src="/cover.png" 
+        alt="Hive - parallel AI agent workspaces" 
+        class="w-full h-auto"
+      />
+    </div>
+
+    <!-- Content -->
+    <article class="space-y-4">
+      <p>
+        Hive is a CLI tool for managing parallel AI agent workspaces using git worktrees.
+      </p>
+
+      <p>
+        Hive simplifies parallel AI coding sessions by removing the complexity that developers 
+        face when running multiple agents. By eliminating branch conflicts and file stomping, 
+        it streamlines both implementation and maintenance workflows.
+      </p>
+
+      <p>
+        Built on git's <a href="https://git-scm.com/docs/git-worktree" class="text-blue-600 hover:underline">worktree</a> feature and a beautiful 
+        <a href="https://github.com/vadimdemedes/ink" class="text-blue-600 hover:underline">Ink</a> TUI, 
+        Hive ensures your AI coding sessions are both isolated and manageable by default.
+      </p>
+
+      <p>
+        For the source code, check out the <a href="https://github.com/YOURUSER/hive" class="text-blue-600 hover:underline">GitHub</a>.
+      </p>
+
+      <!-- Installation -->
+      <h2 class="font-medium pt-4">Installation</h2>
+      <div class="bg-gray-50 rounded-lg p-4 font-mono text-[13px]">
+        <span class="text-pink-600">npm</span> <span class="text-blue-600">i -g</span> hive-cli
+      </div>
+
+      <!-- Usage -->
+      <h2 class="font-medium pt-4">Usage</h2>
+      <p>
+        Run <code class="bg-gray-100 px-1.5 py-0.5 rounded text-[13px]">hive</code> in any git repository to launch the interactive TUI. 
+        Create isolated workspaces for each AI agent, then merge or drop changes as needed.
+      </p>
+
+      <div class="bg-gray-50 rounded-lg p-4 font-mono text-[13px] space-y-1">
+        <div><span class="text-gray-500"># Launch interactive mode</span></div>
+        <div>hive</div>
+        <div class="pt-2"><span class="text-gray-500"># Create a new workspace</span></div>
+        <div>hive new <span class="text-green-600">"add user authentication"</span></div>
+        <div class="pt-2"><span class="text-gray-500"># List all workspaces</span></div>
+        <div>hive list</div>
+        <div class="pt-2"><span class="text-gray-500"># Merge a workspace back to main</span></div>
+        <div>hive merge my-task</div>
+      </div>
+
+      <!-- Why -->
+      <h2 class="font-medium pt-4">Why</h2>
+      <p>
+        Because alt-tabbing between branches is tedious and AI agents don't know how to share. 
+        <a href="https://www.anthropic.com/engineering/claude-code-best-practices" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Anthropic recommends</a> using 
+        git worktrees for parallel Claude Code sessions—Hive automates the manual work.
+      </p>
+    </article>
+
+    <!-- Footer -->
+    <footer class="mt-16 pt-8 border-t border-gray-200 text-gray-500">
+      <p>MIT License. Do whatever you want.</p>
+      <p>Built by <a href="https://x.com/cristicrtu" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Cristian Cretu</a>.</p>
+    </footer>
+  </main>
+</Layout>

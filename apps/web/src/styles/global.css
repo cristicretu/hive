@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-separator: oklch(0.22213 0 0 / 0.1);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 24px;
+    font-weight: 400;
+    color: oklch(0.22213 0 0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-white min-h-screen;
+  }
+}
+
+/* Dropdown animations */
+@keyframes dropdown-open {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdown-close {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+}
+
+.dropdown-popup {
+  transform-origin: top right;
+}
+
+.dropdown-popup[data-open] {
+  animation: dropdown-open 0.15s ease-out;
+}
+
+.dropdown-popup[data-ending-style] {
+  animation: dropdown-close 0.1s ease-in;
+}
