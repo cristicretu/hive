@@ -1,4 +1,5 @@
-# 🐝 Hive
+# 🐝 Hive [![npm version](https://img.shields.io/npm/v/@cristicretu/hive-cli.svg)](https://www.npmjs.com/package/@cristicretu/hive-cli)
+
 
 parallel ai agents without the pain
 
@@ -16,8 +17,35 @@ hive fixes this. git worktrees + a nice cli. each agent gets its own branch, its
 <img src="./media/cli.png" />
 
 ## install
+
 ```bash
-# npm i -g  xxxxxx (coming soon)
+# npm
+npm i -g @cristicretu/hive-cli
+
+# bun
+bun add -g @cristicretu/hive-cli
+
+# pnpm
+pnpm add -g @cristicretu/hive-cli
+```
+
+## usage
+
+```bash
+# launch interactive tui
+hive
+
+# create a new workspace
+hive new "add user authentication"
+
+# list all workspaces
+hive list
+
+# merge a workspace back to main
+hive merge my-task
+
+# drop a workspace
+hive drop my-task
 ```
 
 ## why
