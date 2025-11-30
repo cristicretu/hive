@@ -30,7 +30,16 @@ export default function Interactive({ path }: InteractiveProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
   const { exit } = useApp();
+
+  // Auto-clear error after 3 seconds
+  const showError = (msg: string) => {
+    setError(msg);
+    if (errorTimeout) clearTimeout(errorTimeout);
+    const timeout = setTimeout(() => setError(''), 3000);
+    setErrorTimeout(timeout);
+  };
 
   // Change directory if path is specified
   useEffect(() => {
@@ -39,7 +48,7 @@ export default function Interactive({ path }: InteractiveProps) {
         const targetPath = pathModule.resolve(path);
         process.chdir(targetPath);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to change directory');
+        showError(err instanceof Error ? err.message : 'Failed to change directory');
       }
     }
   }, [path]);
@@ -75,7 +84,7 @@ export default function Interactive({ path }: InteractiveProps) {
         // Update with status
         setTasks(tasksWithStatus);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load tasks');
+        showError(err instanceof Error ? err.message : 'Failed to load tasks');
         setLoading(false);
       }
     };
@@ -142,7 +151,7 @@ export default function Interactive({ path }: InteractiveProps) {
         setSelectedIndex(Math.max(0, tasks.length - 2));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to complete task');
+      showError(err instanceof Error ? err.message : 'Failed to complete task');
     }
   };
 
@@ -152,7 +161,7 @@ export default function Interactive({ path }: InteractiveProps) {
       const editorToUse = editor || config.defaultEditor;
       openInEditor(task.worktreePath, editorToUse);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to open editor');
+      showError(err instanceof Error ? err.message : 'Failed to open editor');
     }
   };
 
@@ -170,7 +179,7 @@ export default function Interactive({ path }: InteractiveProps) {
         setSelectedIndex(Math.max(0, tasks.length - 2));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to drop task');
+      showError(err instanceof Error ? err.message : 'Failed to drop task');
     }
   };
 
@@ -196,16 +205,12 @@ export default function Interactive({ path }: InteractiveProps) {
       setNewTaskInput('');
       setMode('view');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create task');
+      showError(err instanceof Error ? err.message : 'Failed to create task');
     }
   };
 
   if (loading) {
     return <Text>Loading...</Text>;
-  }
-
-  if (error) {
-    return <Text color="red">Error: {error}</Text>;
   }
 
   const repoName = path ? path.split('/').pop() : 'current directory';
@@ -265,6 +270,12 @@ export default function Interactive({ path }: InteractiveProps) {
       <Box borderStyle="single" borderColor="cyan">
         <Text bold> 🐝 HIVE </Text>
       </Box>
+
+      {error && (
+        <Box paddingX={2}>
+          <Text color="red">⚠ {error}</Text>
+        </Box>
+      )}
 
       <Box paddingX={2} paddingY={1} flexDirection="column">
         <Text dimColor>{repoName}</Text>
