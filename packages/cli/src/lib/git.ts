@@ -590,3 +590,40 @@ export async function getBranchChanges(slug: string): Promise<BranchChanges> {
     throw new GitError('Failed to get branch changes', error);
   }
 }
+
+/**
+ * Get full diff for a worktree against base branch
+ * @param slug - Unique identifier for the worktree
+ * @param baseBranch - Base branch to compare against (defaults to main/master)
+ * @returns Full diff string
+ */
+export async function getFullDiff(
+  slug: string,
+  baseBranch?: string
+): Promise<string> {
+  try {
+    const git = getGit();
+
+    if (!(await isGitRepository())) {
+      throw new GitError('Not a git repository');
+    }
+
+    const worktrees = await listWorktrees();
+    const worktree = worktrees.find((w) => w.slug === slug);
+
+    if (!worktree) {
+      throw new GitError(`Worktree ${slug} not found`);
+    }
+
+    const base = baseBranch || (await getDefaultBranch(git));
+    const worktreeGit = getGit(worktree.path);
+
+    const diff = await worktreeGit.diff([base]);
+    return diff;
+  } catch (error) {
+    if (error instanceof GitError) {
+      throw error;
+    }
+    throw new GitError('Failed to get full diff', error);
+  }
+}

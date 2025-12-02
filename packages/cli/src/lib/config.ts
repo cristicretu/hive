@@ -4,6 +4,14 @@ import { homedir } from 'os';
 
 export type EditorType = 'code' | 'cursor' | 'claude' | 'terminal';
 
+export interface AIConfig {
+  enabled: boolean;
+  apiKey?: string;
+  model: string;
+  autoReview: boolean;
+  autoResolveConflicts: boolean;
+}
+
 export interface HiveConfig {
   defaultBaseBranch: string;
   defaultEditor: EditorType;
@@ -11,6 +19,7 @@ export interface HiveConfig {
   autoSymlink: boolean;
   customSymlinks: string[];
   autoCleanStaleDays: number | null;
+  ai?: AIConfig;
 }
 
 const DEFAULT_CONFIG: HiveConfig = {
@@ -20,6 +29,12 @@ const DEFAULT_CONFIG: HiveConfig = {
   autoSymlink: true,
   customSymlinks: [],
   autoCleanStaleDays: null,
+  ai: {
+    enabled: false,
+    model: 'claude-3-5-sonnet-20241022',
+    autoReview: false,
+    autoResolveConflicts: false,
+  },
 };
 
 const CONFIG_DIR = path.join(process.cwd(), '.hive');
@@ -57,6 +72,7 @@ export function getConfig(): HiveConfig {
     autoSymlink: store.get('autoSymlink'),
     customSymlinks: store.get('customSymlinks'),
     autoCleanStaleDays: store.get('autoCleanStaleDays'),
+    ai: store.get('ai'),
   };
 }
 
@@ -98,6 +114,10 @@ export function setConfig(updates: Partial<HiveConfig>): HiveConfig {
     store.set('autoCleanStaleDays', updates.autoCleanStaleDays);
   }
 
+  if (updates.ai !== undefined) {
+    store.set('ai', updates.ai);
+  }
+
   return getConfig();
 }
 
@@ -126,6 +146,9 @@ export function initConfig(): HiveConfig {
   }
   if (!store.has('autoCleanStaleDays')) {
     store.set('autoCleanStaleDays', DEFAULT_CONFIG.autoCleanStaleDays);
+  }
+  if (!store.has('ai')) {
+    store.set('ai', DEFAULT_CONFIG.ai);
   }
 
   return getConfig();
