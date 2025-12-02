@@ -32,8 +32,11 @@ export interface ConflictResolution {
   reasoning: string;
 }
 
+export type AIProvider = 'anthropic' | 'google';
+
 export interface AIConfig {
   enabled: boolean;
+  provider: AIProvider;
   apiKey?: string;
   model: string;
   autoReview: boolean;

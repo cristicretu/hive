@@ -12,6 +12,7 @@ import DropCommand from './commands/drop.js';
 import CleanCommand from './commands/clean.js';
 import InteractiveCommand from './commands/interactive.js';
 import ReviewCommand from './commands/review.js';
+import SyncCommand from './commands/sync.js';
 
 const cli = meow(
 	`
@@ -25,6 +26,7 @@ const cli = meow(
 	  open <task>           Open a hive workspace in your editor
 	  diff <task>           Show differences between workspace and main branch
 	  review <task>         AI code review for a workspace
+	  sync                  Analyze all tasks and predict merge conflicts
 	  merge <task>          Merge a hive workspace back to main branch
 	  drop <task>           Remove a hive workspace
 	  clean                 Remove stale worktrees
@@ -125,6 +127,9 @@ switch (command) {
 		break;
 	case 'review':
 		component = <ReviewCommand task={args[0]} path={flags.path} />;
+		break;
+	case 'sync':
+		component = <SyncCommand path={flags.path} />;
 		break;
 	case 'merge':
 		component = <MergeCommand task={args[0]} noDelete={flags.noDelete} path={flags.path} />;

@@ -1,43 +1,47 @@
-import Conf from 'conf';
-import path from 'path';
-import { homedir } from 'os';
+import Conf from "conf";
+import path from "path";
+import { homedir } from "os";
 
-export type EditorType = 'code' | 'cursor' | 'claude' | 'terminal';
+export type EditorType = "code" | "cursor" | "claude" | "terminal";
+
+export type AIProvider = 'anthropic' | 'google';
 
 export interface AIConfig {
-  enabled: boolean;
-  apiKey?: string;
-  model: string;
-  autoReview: boolean;
-  autoResolveConflicts: boolean;
+	enabled: boolean;
+	provider: AIProvider;
+	apiKey?: string;
+	model: string;
+	autoReview: boolean;
+	autoResolveConflicts: boolean;
 }
 
 export interface HiveConfig {
-  defaultBaseBranch: string;
-  defaultEditor: EditorType;
-  worktreeDir: string;
-  autoSymlink: boolean;
-  customSymlinks: string[];
-  autoCleanStaleDays: number | null;
-  ai?: AIConfig;
+	defaultBaseBranch: string;
+	defaultEditor: EditorType;
+	worktreeDir: string;
+	autoSymlink: boolean;
+	customSymlinks: string[];
+	autoCleanStaleDays: number | null;
+	ai?: AIConfig;
 }
 
 const DEFAULT_CONFIG: HiveConfig = {
-  defaultBaseBranch: 'main',
-  defaultEditor: 'code',
-  worktreeDir: '.worktrees',
-  autoSymlink: true,
-  customSymlinks: [],
-  autoCleanStaleDays: null,
-  ai: {
-    enabled: false,
-    model: 'claude-3-5-sonnet-20241022',
-    autoReview: false,
-    autoResolveConflicts: false,
-  },
+	defaultBaseBranch: "main",
+	defaultEditor: "code",
+	worktreeDir: ".worktrees",
+	autoSymlink: true,
+	customSymlinks: [],
+	autoCleanStaleDays: null,
+	ai: {
+		enabled: false,
+		provider: "google",
+		model: "gemini-2.5-flash",
+		autoReview: false,
+		autoResolveConflicts: false,
+	},
 };
 
-const CONFIG_DIR = path.join(process.cwd(), '.hive');
+const CONFIG_DIR = path.join(process.cwd(), ".hive");
 
 let configStore: Conf<HiveConfig> | null = null;
 
@@ -45,18 +49,18 @@ let configStore: Conf<HiveConfig> | null = null;
  * Initialize the config store singleton
  */
 function getStore(): Conf<HiveConfig> {
-  if (!configStore) {
-    configStore = new Conf<HiveConfig>({
-      configName: 'config',
-      cwd: CONFIG_DIR,
-      defaults: DEFAULT_CONFIG,
-      projectName: 'hive',
-      projectSuffix: '',
-      clearInvalidConfig: true,
-      accessPropertiesByDotNotation: false,
-    });
-  }
-  return configStore;
+	if (!configStore) {
+		configStore = new Conf<HiveConfig>({
+			configName: "config",
+			cwd: CONFIG_DIR,
+			defaults: DEFAULT_CONFIG,
+			projectName: "hive",
+			projectSuffix: "",
+			clearInvalidConfig: true,
+			accessPropertiesByDotNotation: false,
+		});
+	}
+	return configStore;
 }
 
 /**
@@ -64,16 +68,16 @@ function getStore(): Conf<HiveConfig> {
  * @returns The current Hive configuration
  */
 export function getConfig(): HiveConfig {
-  const store = getStore();
-  return {
-    defaultBaseBranch: store.get('defaultBaseBranch'),
-    defaultEditor: store.get('defaultEditor'),
-    worktreeDir: store.get('worktreeDir'),
-    autoSymlink: store.get('autoSymlink'),
-    customSymlinks: store.get('customSymlinks'),
-    autoCleanStaleDays: store.get('autoCleanStaleDays'),
-    ai: store.get('ai'),
-  };
+	const store = getStore();
+	return {
+		defaultBaseBranch: store.get("defaultBaseBranch"),
+		defaultEditor: store.get("defaultEditor"),
+		worktreeDir: store.get("worktreeDir"),
+		autoSymlink: store.get("autoSymlink"),
+		customSymlinks: store.get("customSymlinks"),
+		autoCleanStaleDays: store.get("autoCleanStaleDays"),
+		ai: store.get("ai"),
+	};
 }
 
 /**
@@ -82,43 +86,48 @@ export function getConfig(): HiveConfig {
  * @returns The updated configuration
  */
 export function setConfig(updates: Partial<HiveConfig>): HiveConfig {
-  const store = getStore();
+	const store = getStore();
 
-  if (updates.defaultBaseBranch !== undefined) {
-    store.set('defaultBaseBranch', updates.defaultBaseBranch);
-  }
+	if (updates.defaultBaseBranch !== undefined) {
+		store.set("defaultBaseBranch", updates.defaultBaseBranch);
+	}
 
-  if (updates.defaultEditor !== undefined) {
-    const validEditors: EditorType[] = ['code', 'cursor', 'claude', 'terminal'];
-    if (!validEditors.includes(updates.defaultEditor)) {
-      throw new Error(
-        `Invalid editor: ${updates.defaultEditor}. Must be one of: ${validEditors.join(', ')}`
-      );
-    }
-    store.set('defaultEditor', updates.defaultEditor);
-  }
+	if (updates.defaultEditor !== undefined) {
+		const validEditors: EditorType[] = [
+			"code",
+			"cursor",
+			"claude",
+			"terminal",
+		];
+		if (!validEditors.includes(updates.defaultEditor)) {
+			throw new Error(
+				`Invalid editor: ${updates.defaultEditor}. Must be one of: ${validEditors.join(", ")}`,
+			);
+		}
+		store.set("defaultEditor", updates.defaultEditor);
+	}
 
-  if (updates.worktreeDir !== undefined) {
-    store.set('worktreeDir', updates.worktreeDir);
-  }
+	if (updates.worktreeDir !== undefined) {
+		store.set("worktreeDir", updates.worktreeDir);
+	}
 
-  if (updates.autoSymlink !== undefined) {
-    store.set('autoSymlink', updates.autoSymlink);
-  }
+	if (updates.autoSymlink !== undefined) {
+		store.set("autoSymlink", updates.autoSymlink);
+	}
 
-  if (updates.customSymlinks !== undefined) {
-    store.set('customSymlinks', updates.customSymlinks);
-  }
+	if (updates.customSymlinks !== undefined) {
+		store.set("customSymlinks", updates.customSymlinks);
+	}
 
-  if (updates.autoCleanStaleDays !== undefined) {
-    store.set('autoCleanStaleDays', updates.autoCleanStaleDays);
-  }
+	if (updates.autoCleanStaleDays !== undefined) {
+		store.set("autoCleanStaleDays", updates.autoCleanStaleDays);
+	}
 
-  if (updates.ai !== undefined) {
-    store.set('ai', updates.ai);
-  }
+	if (updates.ai !== undefined) {
+		store.set("ai", updates.ai);
+	}
 
-  return getConfig();
+	return getConfig();
 }
 
 /**
@@ -126,32 +135,38 @@ export function setConfig(updates: Partial<HiveConfig>): HiveConfig {
  * @returns The initialized configuration
  */
 export function initConfig(): HiveConfig {
-  const store = getStore();
+	const store = getStore();
 
-  // Ensure all default values are set
-  if (!store.has('defaultBaseBranch')) {
-    store.set('defaultBaseBranch', DEFAULT_CONFIG.defaultBaseBranch);
-  }
-  if (!store.has('defaultEditor')) {
-    store.set('defaultEditor', DEFAULT_CONFIG.defaultEditor);
-  }
-  if (!store.has('worktreeDir')) {
-    store.set('worktreeDir', DEFAULT_CONFIG.worktreeDir);
-  }
-  if (!store.has('autoSymlink')) {
-    store.set('autoSymlink', DEFAULT_CONFIG.autoSymlink);
-  }
-  if (!store.has('customSymlinks')) {
-    store.set('customSymlinks', DEFAULT_CONFIG.customSymlinks);
-  }
-  if (!store.has('autoCleanStaleDays')) {
-    store.set('autoCleanStaleDays', DEFAULT_CONFIG.autoCleanStaleDays);
-  }
-  if (!store.has('ai')) {
-    store.set('ai', DEFAULT_CONFIG.ai);
-  }
+	// Ensure all default values are set
+	if (!store.has("defaultBaseBranch")) {
+		store.set(
+			"defaultBaseBranch",
+			DEFAULT_CONFIG.defaultBaseBranch,
+		);
+	}
+	if (!store.has("defaultEditor")) {
+		store.set("defaultEditor", DEFAULT_CONFIG.defaultEditor);
+	}
+	if (!store.has("worktreeDir")) {
+		store.set("worktreeDir", DEFAULT_CONFIG.worktreeDir);
+	}
+	if (!store.has("autoSymlink")) {
+		store.set("autoSymlink", DEFAULT_CONFIG.autoSymlink);
+	}
+	if (!store.has("customSymlinks")) {
+		store.set("customSymlinks", DEFAULT_CONFIG.customSymlinks);
+	}
+	if (!store.has("autoCleanStaleDays")) {
+		store.set(
+			"autoCleanStaleDays",
+			DEFAULT_CONFIG.autoCleanStaleDays,
+		);
+	}
+	if (!store.has("ai")) {
+		store.set("ai", DEFAULT_CONFIG.ai);
+	}
 
-  return getConfig();
+	return getConfig();
 }
 
 /**
@@ -159,9 +174,9 @@ export function initConfig(): HiveConfig {
  * @returns The reset configuration
  */
 export function resetConfig(): HiveConfig {
-  const store = getStore();
-  store.clear();
-  return initConfig();
+	const store = getStore();
+	store.clear();
+	return initConfig();
 }
 
 /**
@@ -169,5 +184,5 @@ export function resetConfig(): HiveConfig {
  * @returns Absolute path to config.json
  */
 export function getConfigPath(): string {
-  return getStore().path;
+	return getStore().path;
 }

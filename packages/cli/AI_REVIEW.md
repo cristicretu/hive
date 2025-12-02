@@ -1,6 +1,6 @@
 # AI Code Review & Conflict Resolution
 
-Hive now includes AI-powered code review and conflict resolution using Claude 3.5 Sonnet.
+Hive now includes AI-powered code review and conflict resolution using Google Gemini 2.0 Flash or Gemini 2.5 Pro.
 
 ## Setup
 
@@ -8,19 +8,19 @@ Hive now includes AI-powered code review and conflict resolution using Claude 3.
 
 Already included in the package:
 - `ai` - Vercel AI SDK
-- `@ai-sdk/anthropic` - Anthropic provider
+- `@ai-sdk/google` - Google AI provider
 - `zod` - Schema validation
 
 ### 2. Configure API Key
 
-Set your Anthropic API key:
+Set your Google AI API key:
 
 ```bash
 # Option 1: Environment variable (recommended)
-export ANTHROPIC_API_KEY="sk-ant-..."
+export GEMINI_API_KEY="your-key-here"
 
 # Option 2: Save in config
-hive config set ai.apiKey "sk-ant-..."
+hive config set ai.apiKey "your-key-here"
 hive config set ai.enabled true
 ```
 
@@ -29,6 +29,12 @@ hive config set ai.enabled true
 ```bash
 # Enable AI review
 hive config set ai.enabled true
+
+# Set provider (default is google)
+hive config set ai.provider google
+
+# Set model (optional)
+hive config set ai.model "gemini-2.5-flash"
 
 # Enable auto-review on merge (optional)
 hive config set ai.autoReview true
@@ -88,8 +94,9 @@ hive merge <task> --auto-resolve
 {
   "ai": {
     "enabled": true,
-    "apiKey": "sk-ant-...",
-    "model": "claude-3-5-sonnet-20241022",
+    "provider": "google",
+    "apiKey": "your-key-here",
+    "model": "gemini-2.5-flash",
     "autoReview": false,
     "autoResolveConflicts": false
   }
@@ -99,10 +106,21 @@ hive merge <task> --auto-resolve
 ### Options
 
 - `enabled` - Enable/disable AI features
-- `apiKey` - Anthropic API key (or use env var)
-- `model` - Claude model to use
+- `provider` - AI provider: "google"
+- `apiKey` - Google AI API key (or use env var GEMINI_API_KEY)
+- `model` - Gemini model to use:
+  - `gemini-2.5-flash` - Fast, efficient (recommended)
+  - `gemini-1.5-pro` - More capable
+  - `gemini-1.5-flash` - Very fast
 - `autoReview` - Automatically review on merge
 - `autoResolveConflicts` - Auto-resolve conflicts with AI
+
+## Available Models
+
+- **gemini-2.5-flash** - Latest experimental flash model (default, fastest)
+- **gemini-1.5-pro** - Most capable model
+- **gemini-1.5-flash** - Fast and efficient
+- **gemini-1.5-flash-8b** - Ultra-fast, lighter model
 
 ## How It Works
 
@@ -127,12 +145,12 @@ hive merge <task> --auto-resolve
 
 ## Cost
 
-Using Claude 3.5 Sonnet:
-- ~$3 per million input tokens
-- Average review: 5k-20k tokens = $0.015-$0.06
-- Monthly (50 reviews): ~$1-3
+Using Google Gemini:
+- **gemini-2.5-flash**: Free tier available
+- **gemini-1.5-flash**: ~$0.075 per million input tokens
+- **gemini-1.5-pro**: ~$1.25 per million input tokens
 
-Very affordable for the value!
+Average review: 5k-20k tokens = Very affordable!
 
 ## Tips
 
@@ -140,20 +158,28 @@ Very affordable for the value!
 2. **Use environment variables** - Don't commit API keys
 3. **Check recommendations** - AI is good but not perfect
 4. **Combine with tests** - AI + tests = best safety net
+5. **Try flash models first** - They're fast and usually good enough
 
 ## Troubleshooting
 
-### "ANTHROPIC_API_KEY not found"
+### "GEMINI_API_KEY not found"
 
 Set the API key:
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
+export GEMINI_API_KEY="your-key-here"
 ```
 
 Or save in config:
 ```bash
-hive config set ai.apiKey "sk-ant-..."
+hive config set ai.apiKey "your-key-here"
 ```
+
+### Get a Google AI API Key
+
+1. Go to: https://aistudio.google.com/app/apikey
+2. Click "Get API Key"
+3. Create a new key or use existing
+4. Copy and set as environment variable
 
 ### "No changes to review"
 

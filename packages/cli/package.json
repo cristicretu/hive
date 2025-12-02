@@ -37,7 +37,7 @@
     "url": "https://github.com/cristicretu/hive/issues"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.53",
+    "@ai-sdk/google": "^2.0.44",
     "ai": "^5.0.106",
     "chalk": "^5.3.0",
     "conf": "^13.0.1",
