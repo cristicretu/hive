@@ -8,11 +8,11 @@ let aiClient: ReturnType<typeof createGoogleGenerativeAI> | null = null;
 export function getAIClient() {
 	if (!aiClient) {
 		const config = getConfig();
-		const apiKey = process.env.GEMINI_API_KEY || config.ai?.apiKey;
+		const apiKey = config.ai?.apiKey;
 
 		if (!apiKey) {
 			throw new Error(
-				"GEMINI_API_KEY not found. Set it in environment or run: hive config set ai.apiKey YOUR_KEY",
+				"AI API key not configured. Set it with: hive config set ai.apiKey YOUR_KEY",
 			);
 		}
 

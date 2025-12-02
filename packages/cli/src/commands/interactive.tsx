@@ -368,8 +368,26 @@ export default function Interactive({ path }: InteractiveProps) {
           <Text bold> 🐝 HIVE ─ Settings </Text>
         </Box>
         <Box flexDirection="column" paddingX={2} paddingY={1}>
-          <Text dimColor>Default editor: <Text color="cyan">{config.defaultEditor}</Text></Text>
-          <Text dimColor>Worktree location: <Text color="cyan">{config.worktreeDir}</Text></Text>
+          <Text bold color="cyan">General</Text>
+          <Text>  Default branch: <Text color="cyan">{config.defaultBaseBranch}</Text></Text>
+          <Text>  Default editor: <Text color="cyan">{config.defaultEditor}</Text></Text>
+          <Text>  Worktree dir: <Text color="cyan">{config.worktreeDir}</Text></Text>
+          <Text>  Auto-symlink: <Text color="cyan">{config.autoSymlink ? 'enabled' : 'disabled'}</Text></Text>
+          
+          {config.ai && (
+            <Box marginTop={1} flexDirection="column">
+              <Text bold color="cyan">AI Settings</Text>
+              <Text>  Enabled: <Text color="cyan">{config.ai.enabled ? 'yes' : 'no'}</Text></Text>
+              <Text>  Provider: <Text color="cyan">{config.ai.provider}</Text></Text>
+              <Text>  Model: <Text color="cyan">{config.ai.model}</Text></Text>
+              <Text>  API Key: <Text color="cyan">{config.ai.apiKey ? '***' + config.ai.apiKey.slice(-4) : 'not set'}</Text></Text>
+            </Box>
+          )}
+          
+          <Box marginTop={1}>
+            <Text dimColor>Edit: .hive/config.json or use: hive config set &lt;key&gt; &lt;value&gt;</Text>
+          </Box>
+          
           <Box marginTop={1}>
             <Text dimColor>esc:back</Text>
           </Box>
