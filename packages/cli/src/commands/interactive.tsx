@@ -9,12 +9,13 @@ import { formatDistanceToNow } from 'date-fns';
 import * as pathModule from 'path';
 import { openInEditor, EditorType } from '../lib/editor.js';
 import MergeCommand from './merge.js';
+import SyncCommand from './sync.js';
 
 interface InteractiveProps {
   path?: string;
 }
 
-type Mode = 'view' | 'create' | 'settings' | 'merge' | 'confirmCommit';
+type Mode = 'view' | 'create' | 'settings' | 'merge' | 'confirmCommit' | 'sync';
 
 interface TaskWithStatus extends Task {
   gitStatus?: {
@@ -125,11 +126,21 @@ export default function Interactive({ path }: InteractiveProps) {
       return;
     }
 
+    if (mode === 'sync') {
+      if (key.escape) {
+        setMode('view');
+      }
+      return;
+    }
+
     // View mode controls
     if (input === 'n') {
       setMode('create');
     } else if (input === 's') {
       setMode('settings');
+    } else if (input === 'r') {
+      // Trigger sync/review
+      setMode('sync');
     } else if (input === 'q' || key.escape) {
       exit();
     } else if (key.upArrow || input === 'k') {
@@ -336,6 +347,18 @@ export default function Interactive({ path }: InteractiveProps) {
     />;
   }
 
+  // Sync/Review view
+  if (mode === 'sync') {
+    return (
+      <Box flexDirection="column">
+        <SyncCommand path={path} />
+        <Box marginTop={1} borderStyle="single" borderColor="cyan" paddingX={2}>
+          <Text dimColor>Press ESC to return to task list</Text>
+        </Box>
+      </Box>
+    );
+  }
+
   // Settings view
   if (mode === 'settings') {
     const config = getConfig();
@@ -441,7 +464,7 @@ export default function Interactive({ path }: InteractiveProps) {
       </Box>
 
       <Box borderStyle="single" borderColor="cyan">
-        <Text dimColor> n:new o:open c:cursor a:claude m:merge d:drop s:settings q:quit </Text>
+        <Text dimColor> n:new r:review o:open c:cursor a:claude m:merge d:drop s:settings q:quit </Text>
       </Box>
     </Box>
   );
