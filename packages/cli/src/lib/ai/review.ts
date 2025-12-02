@@ -26,22 +26,22 @@ export async function reviewCode(
     deletions: number;
   }
 ): Promise<ReviewResult> {
-  const prompt = `You are a senior code reviewer analyzing a git diff. Review for security, bugs, performance, and code quality.
+  const prompt = `Senior code reviewer. Analyze this diff for security, bugs, performance, quality.
 
 Context:
-- Files changed: ${context.files.join(', ')}
-- Lines: +${context.additions} -${context.deletions}
+- Files: ${context.files.join(', ')}
+- Changes: +${context.additions} -${context.deletions}
 
 Diff:
 ${diff}
 
 Provide:
-1. "concerns" - Critical issues, warnings, and suggestions (be selective, only mention real issues)
-2. "positives" - What's well done (2-3 items max)
-3. "summary" - One sentence overview
-4. "recommendation" - approve | request-changes | comment
+1. concerns: Real issues only. Be selective. Title + description + suggestion (all brief)
+2. positives: 2-3 max
+3. summary: One sentence
+4. recommendation: approve | request-changes | comment
 
-Be concise and professional. Focus on significant issues.`;
+Ultra-concise. No fluff. Essential info only.`;
 
   return generateStructured(prompt, ReviewResultSchema);
 }

@@ -14,34 +14,29 @@ export async function resolveConflict(
   conflict: ConflictBlock,
   fileContext?: string
 ): Promise<ConflictResolution> {
-  const prompt = `You are resolving a git merge conflict. Analyze both versions and suggest the best resolution.
+  const prompt = `Resolve git merge conflict.
 
-File: ${conflict.file}
-Line: ${conflict.startLine}
+File: ${conflict.file} (line ${conflict.startLine})
 
-Main branch version:
+Main:
 \`\`\`
 ${conflict.mainVersion}
 \`\`\`
 
-Feature branch version:
+Feature:
 \`\`\`
 ${conflict.featureVersion}
 \`\`\`
 
-${fileContext ? `File context:\n${fileContext}\n` : ''}
+${fileContext ? `Context:\n${fileContext}\n` : ''}
 
 Provide:
-1. "analysis" - Brief explanation of the conflict (1-2 sentences)
-2. "suggestedResolution" - The complete resolved code
-3. "confidence" - How confident you are (0-100)
-4. "reasoning" - Why this resolution is best (1-2 sentences)
+1. analysis: One sentence explaining conflict
+2. suggestedResolution: Resolved code
+3. confidence: 0-100
+4. reasoning: One sentence why
 
-Consider:
-- Which changes are more correct
-- Can both changes be combined
-- Breaking changes
-- Intent of each change`;
+Be concise. Focus on solution.`;
 
   const result = await generateStructured(prompt, ConflictResolutionSchema);
   

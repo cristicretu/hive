@@ -182,16 +182,6 @@ export default function Sync({ path }: SyncProps) {
           <Text marginLeft={2}>{report.mergeStrategy.reasoning}</Text>
         </Box>
 
-        <Box marginTop={1}>
-          <Text bold>Difficulty: </Text>
-          <Text color={
-            report.mergeStrategy.estimatedDifficulty === 'easy' ? 'green' :
-            report.mergeStrategy.estimatedDifficulty === 'medium' ? 'yellow' : 'red'
-          }>
-            {report.mergeStrategy.estimatedDifficulty.toUpperCase()}
-          </Text>
-        </Box>
-
         {report.mergeStrategy.alternatives && report.mergeStrategy.alternatives.length > 0 && (
           <Box marginTop={1} flexDirection="column">
             <Text bold>Alternatives:</Text>

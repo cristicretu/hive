@@ -22,7 +22,6 @@ const ConflictPredictionSchema = z.object({
 const MergeStrategySchema = z.object({
   recommendedOrder: z.array(z.string()),
   reasoning: z.string(),
-  estimatedDifficulty: z.enum(['easy', 'medium', 'hard']),
   alternatives: z.array(z.string()).optional(),
 });
 
@@ -52,7 +51,6 @@ export interface ConflictPrediction {
 export interface MergeStrategy {
   recommendedOrder: string[];
   reasoning: string;
-  estimatedDifficulty: 'easy' | 'medium' | 'hard';
   alternatives?: string[];
 }
 
@@ -107,28 +105,29 @@ ${filesList}
 ANALYZE AND PROVIDE:
 
 1. Task Summaries:
-   For each task, provide:
-   - Brief summary of what it accomplishes (1-2 sentences)
+   - One sentence summary per task
    - Impact level (low/medium/high)
-   - Any concerns or issues
+   - Key concerns only (max 2)
 
 2. Conflict Predictions:
-   For overlapping files, predict:
-   - Severity (critical/warning/info)
-   - Type of conflict
-   - Analysis of what might conflict
-   - Specific resolution strategy
-   - Which tasks are affected
+   For overlapping files only:
+   - Severity level
+   - Conflict type (2-3 words max)
+   - Core issue (one sentence)
+   - Resolution (specific steps)
+   
+   IMPORTANT: If multiple files have similar conflicts, group them.
+   Example: "Files X, Y, Z all need refactoring applied first, then feature integration."
 
 3. Merge Strategy:
-   - Recommended merge order with reasoning
-   - Estimated difficulty (easy/medium/hard)
-   - Alternative approaches if applicable
+   - Recommended order
+   - One sentence reasoning
+   - Alternatives (if any)
 
 4. Overall Assessment:
-   One paragraph summarizing the situation and next steps.
+   Two sentences - situation + action.
 
-Be concise, professional, and actionable. Focus on helping the user merge safely.`;
+Be ultra-concise. Avoid repetition. Group similar items.`;
 
   return generateStructured(prompt, SyncReportSchema);
 }
@@ -159,14 +158,14 @@ ${content.slice(0, 2000)}${content.length > 2000 ? '\n... (truncated)' : ''}
   }
 
   prompt += `
-Analyze this conflict and provide:
-- severity: How serious is this conflict? (critical/warning/info)
-- conflictType: What kind of conflict? (e.g., "structural change", "dependency update", "logic modification")
-- analysis: Brief explanation of the conflict (2-3 sentences)
-- suggestedResolution: Specific steps to resolve (be concrete)
-- affectedTasks: Which tasks are involved
+Provide:
+- severity: critical/warning/info
+- conflictType: Brief (2-3 words)
+- analysis: One sentence
+- suggestedResolution: Specific steps (concise)
+- affectedTasks: List
 
-Be specific and actionable.`;
+Be concise and actionable.`;
 
   const ConflictSchema = z.object({
     file: z.string(),

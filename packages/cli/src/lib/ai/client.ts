@@ -8,10 +8,7 @@ let aiClient: ReturnType<typeof createGoogleGenerativeAI> | null = null;
 export function getAIClient() {
 	if (!aiClient) {
 		const config = getConfig();
-		const apiKey =
-			process.env.GEMINI_API_KEY ||
-			config.ai?.apiKey ||
-			"AIzaSyB6zeylDfnNNyiDfwje-MX27urJ6bH1orA";
+		const apiKey = process.env.GEMINI_API_KEY || config.ai?.apiKey;
 
 		if (!apiKey) {
 			throw new Error(
