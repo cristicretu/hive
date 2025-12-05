@@ -4,17 +4,6 @@ import { homedir } from "os";
 
 export type EditorType = "code" | "cursor" | "claude" | "terminal";
 
-export type AIProvider = 'anthropic' | 'google';
-
-export interface AIConfig {
-	enabled: boolean;
-	provider: AIProvider;
-	apiKey?: string;
-	model: string;
-	autoReview: boolean;
-	autoResolveConflicts: boolean;
-}
-
 export interface HiveConfig {
 	defaultBaseBranch: string;
 	defaultEditor: EditorType;
@@ -25,6 +14,32 @@ export interface HiveConfig {
 	ai?: AIConfig;
 }
 
+export type AIProvider = "anthropic" | "google" | "openai";
+const VALID_AI_PROVIDERS: AIProvider[] = ["anthropic", "google", "openai"];
+
+export interface AIConfig {
+	enabled: boolean;
+	provider: AIProvider;
+	apiKey?: string;
+	model: string;
+	autoReview: boolean;
+	autoResolveConflicts: boolean;
+}
+
+export const DEFAULT_AI_MODELS: Record<AIProvider, string> = {
+	google: "gemini-2.5-pro",
+	anthropic: "claude-sonnet-4-5",
+	openai: "gpt-5",
+};
+
+const DEFAULT_AI_CONFIG: AIConfig = {
+	enabled: false,
+	provider: "anthropic",
+	model: DEFAULT_AI_MODELS.anthropic,
+	autoReview: false,
+	autoResolveConflicts: false,
+};
+
 const DEFAULT_CONFIG: HiveConfig = {
 	defaultBaseBranch: "main",
 	defaultEditor: "code",
@@ -32,13 +47,7 @@ const DEFAULT_CONFIG: HiveConfig = {
 	autoSymlink: true,
 	customSymlinks: [],
 	autoCleanStaleDays: null,
-	ai: {
-		enabled: false,
-		provider: "google",
-		model: "gemini-2.5-flash",
-		autoReview: false,
-		autoResolveConflicts: false,
-	},
+	ai: DEFAULT_AI_CONFIG,
 };
 
 const CONFIG_DIR = path.join(process.cwd(), ".hive");
@@ -124,7 +133,22 @@ export function setConfig(updates: Partial<HiveConfig>): HiveConfig {
 	}
 
 	if (updates.ai !== undefined) {
-		store.set("ai", updates.ai);
+		const aiUpdates = { ...updates.ai };
+
+		if (aiUpdates.provider) {
+			aiUpdates.provider =
+				aiUpdates.provider.toLowerCase() as AIProvider;
+		}
+
+		if (
+			aiUpdates.provider &&
+			!VALID_AI_PROVIDERS.includes(aiUpdates.provider)
+		) {
+			throw new Error(
+				`Invalid AI provider: ${aiUpdates.provider}. Must be one of: ${VALID_AI_PROVIDERS.join(", ")}`,
+			);
+		}
+		store.set("ai", aiUpdates);
 	}
 
 	return getConfig();
