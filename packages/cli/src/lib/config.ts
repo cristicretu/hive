@@ -15,7 +15,7 @@ export interface HiveConfig {
 }
 
 export type AIProvider = "anthropic" | "google" | "openai";
-const VALID_AI_PROVIDERS: AIProvider[] = ["anthropic", "google", "openai"];
+export const VALID_AI_PROVIDERS: AIProvider[] = ["anthropic", "google", "openai"];
 
 export interface AIConfig {
 	enabled: boolean;

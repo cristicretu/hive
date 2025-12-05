@@ -3,7 +3,7 @@ import { Text, Box, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import { getTasks, addTask, Task } from '../lib/tasks.js';
 import { createWorktree, getDiffStats, hasUncommittedChanges } from '../lib/git.js';
-import { getConfig, setConfig, type AIConfig, type HiveConfig, DEFAULT_AI_CONFIG } from '../lib/config.js';
+import { getConfig, setConfig, type AIConfig, type HiveConfig, DEFAULT_AI_CONFIG, VALID_AI_PROVIDERS } from '../lib/config.js';
 import { generateSlug } from '../lib/utils.js';
 import { formatDistanceToNow } from 'date-fns';
 import * as pathModule from 'path';
@@ -48,6 +48,7 @@ export default function Interactive({ path }: InteractiveProps) {
 	const [commitMessage, setCommitMessage] = useState('');
 	const [configState, setConfigState] = useState<HiveConfig | null>(null);
 	const [aiProviderInput, setAiProviderInput] = useState('');
+	const [aiProviderIndex, setAiProviderIndex] = useState(0);
 	const [aiModelInput, setAiModelInput] = useState('');
 	const [aiApiKeyInput, setAiApiKeyInput] = useState('');
 	const { exit } = useApp();
@@ -146,6 +147,8 @@ export default function Interactive({ path }: InteractiveProps) {
 				return;
 			}
 			if (input === 'p' && configState?.ai?.enabled) {
+				const currentIndex = VALID_AI_PROVIDERS.indexOf(configState.ai.provider);
+				setAiProviderIndex(currentIndex >= 0 ? currentIndex : 0);
 				setAiProviderInput(configState.ai.provider);
 				setMode('aiProvider');
 				return;
@@ -163,7 +166,27 @@ export default function Interactive({ path }: InteractiveProps) {
 			return;
 		}
 
-		if (mode === 'aiProvider' || mode === 'aiModel' || mode === 'aiApiKey') {
+		if (mode === 'aiProvider') {
+			if (key.escape) {
+				setMode('settings');
+				return;
+			}
+			if (key.upArrow || input === 'k') {
+				setAiProviderIndex((prev) => (prev - 1 + VALID_AI_PROVIDERS.length) % VALID_AI_PROVIDERS.length);
+				return;
+			}
+			if (key.downArrow || input === 'j') {
+				setAiProviderIndex((prev) => (prev + 1) % VALID_AI_PROVIDERS.length);
+				return;
+			}
+			if (key.return) {
+				handleSaveAIProvider();
+				return;
+			}
+			return;
+		}
+
+		if (mode === 'aiModel' || mode === 'aiApiKey') {
 			if (key.escape) {
 				setMode('settings');
 			}
@@ -349,7 +372,7 @@ export default function Interactive({ path }: InteractiveProps) {
 	const handleSaveAIProvider = () => {
 		try {
 			const aiConfig = getAIConfig();
-			const provider = aiProviderInput.trim();
+			const provider = VALID_AI_PROVIDERS[aiProviderIndex];
 			const updated = setConfig({ ai: { ...aiConfig, provider } });
 			setConfigState(updated);
 			setAiModelInput(updated.ai?.model ?? '');
@@ -512,17 +535,22 @@ export default function Interactive({ path }: InteractiveProps) {
 					<Text bold> 🐝 HIVE ─ AI Setup </Text>
 				</Box>
 				<Box flexDirection="column" paddingX={2} paddingY={1}>
-					<Text>AI is enabled. Choose a provider (google | anthropic | openai):</Text>
-					<Box marginTop={1}>
-						<Text>Provider: </Text>
-						<TextInput
-							value={aiProviderInput}
-							onChange={setAiProviderInput}
-							onSubmit={handleSaveAIProvider}
-						/>
+					<Text>AI is enabled. Choose a provider:</Text>
+					<Box marginTop={1} flexDirection="column">
+						{VALID_AI_PROVIDERS.map((provider, index) => {
+							const isSelected = index === aiProviderIndex;
+							return (
+								<Box key={provider}>
+									<Text color={isSelected ? 'cyan' : 'white'}>
+										{isSelected ? '► ' : '  '}
+										{provider}
+									</Text>
+								</Box>
+							);
+						})}
 					</Box>
 					<Box marginTop={1}>
-						<Text dimColor>enter:save  esc:cancel</Text>
+						<Text dimColor>↑/↓ or j/k:navigate  enter:select  esc:cancel</Text>
 					</Box>
 				</Box>
 				<Box borderStyle="single" borderColor="cyan">
