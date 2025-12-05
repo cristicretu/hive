@@ -11,6 +11,9 @@ import MergeCommand from './commands/merge.js';
 import DropCommand from './commands/drop.js';
 import CleanCommand from './commands/clean.js';
 import InteractiveCommand from './commands/interactive.js';
+import ReviewCommand from './commands/review.js';
+import SyncCommand from './commands/sync.js';
+import ConfigCommand from './commands/config.js';
 
 const cli = meow(
 	`
@@ -23,9 +26,12 @@ const cli = meow(
 	  status                Show status of all hive workspaces
 	  open <task>           Open a hive workspace in your editor
 	  diff <task>           Show differences between workspace and main branch
+	  review <task>         AI code review for a workspace
+	  sync                  Analyze all tasks and predict merge conflicts
 	  merge <task>          Merge a hive workspace back to main branch
 	  drop <task>           Remove a hive workspace
 	  clean                 Remove stale worktrees
+	  config [get|set]      View or update configuration
 
 	Global Options
 	  --path, -p            Path to git repository (defaults to current directory)
@@ -121,6 +127,12 @@ switch (command) {
 	case 'diff':
 		component = <DiffCommand task={args[0]} stat={flags.stat} path={flags.path} />;
 		break;
+	case 'review':
+		component = <ReviewCommand task={args[0]} path={flags.path} />;
+		break;
+	case 'sync':
+		component = <SyncCommand path={flags.path} />;
+		break;
 	case 'merge':
 		component = <MergeCommand task={args[0]} noDelete={flags.noDelete} path={flags.path} />;
 		break;
@@ -129,6 +141,10 @@ switch (command) {
 		break;
 	case 'clean':
 		component = <CleanCommand stale={flags.stale} force={flags.force} dryRun={flags.dryRun} />;
+		break;
+	case 'config':
+		const action = args[0] as 'get' | 'set' | undefined;
+		component = <ConfigCommand action={action || 'get'} configKey={args[1]} value={args[2]} />;
 		break;
 	default:
 		// Default to interactive mode when no command specified
