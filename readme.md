@@ -41,6 +41,12 @@ hive new "add user authentication"
 # list all workspaces
 hive list
 
+# review a single task (code quality)
+hive review my-task
+
+# analyze multiple parallel tasks for conflicts
+hive sync
+
 # merge a workspace back to main
 hive merge my-task
 

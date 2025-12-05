@@ -3,14 +3,14 @@ import { Text, Box, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import { getTasks, addTask, Task } from '../lib/tasks.js';
 import { createWorktree, getDiffStats, hasUncommittedChanges } from '../lib/git.js';
-import { getConfig, setConfig, type AIConfig, type HiveConfig } from '../lib/config.js';
+import { getConfig, setConfig, type AIConfig, type HiveConfig, DEFAULT_AI_CONFIG } from '../lib/config.js';
 import { generateSlug } from '../lib/utils.js';
 import { formatDistanceToNow } from 'date-fns';
 import * as pathModule from 'path';
 import { openInEditor, EditorType } from '../lib/editor.js';
 import MergeCommand from './merge.js';
-import SyncCommand from './sync.js';
-import DEFAULT_AI_CONFIG from './config.tsx'
+import Sync from './sync.js';
+import Review from './review.js';
 
 interface InteractiveProps {
 	path?: string;
@@ -23,6 +23,7 @@ type Mode =
 	| 'merge'
 	| 'confirmCommit'
 	| 'sync'
+	| 'review'
 	| 'aiProvider'
 	| 'aiModel'
 	| 'aiApiKey';
@@ -128,6 +129,13 @@ export default function Interactive({ path }: InteractiveProps) {
 			return;
 		}
 
+		if (mode === 'review') {
+			if (key.escape) {
+				setMode('view');
+				return;
+			}
+		}
+
 		if (mode === 'settings') {
 			if (key.escape) {
 				setMode('view');
@@ -187,9 +195,12 @@ export default function Interactive({ path }: InteractiveProps) {
 			setMode('create');
 		} else if (input === 's') {
 			setMode('settings');
-		} else if (input === 'r') {
-			// Trigger sync/review
+		} else if (input === 'y' && tasks.length > 0) {
+			// Trigger sync
 			setMode('sync');
+		} else if (input === 'r' && tasks.length > 0) {
+			// Trigger review for selected task
+			setMode('review');
 		} else if (input === 'q' || key.escape) {
 			exit();
 		} else if (key.upArrow || input === 'k') {
@@ -455,7 +466,38 @@ export default function Interactive({ path }: InteractiveProps) {
 	if (mode === 'sync') {
 		return (
 			<Box flexDirection="column">
-				<SyncCommand path={path} />
+				<Sync path={path} />
+				<Box marginTop={1} borderStyle="single" borderColor="cyan" paddingX={2}>
+					<Text dimColor>Press ESC to return to task list</Text>
+				</Box>
+			</Box>
+		);
+	}
+
+	if (mode === 'review') {
+		const selectedTask = tasks[selectedIndex];
+		if (!selectedTask) {
+			return (
+				<Box flexDirection="column">
+					<Box borderStyle="single" borderColor="cyan">
+						<Text bold> 🐝 HIVE ─ Review </Text>
+					</Box>
+					<Box paddingX={2} paddingY={1}>
+						<Text color="red">No task selected</Text>
+					</Box>
+					<Box borderStyle="single" borderColor="cyan" paddingX={2}>
+						<Text dimColor>Press ESC to return to task list</Text>
+					</Box>
+				</Box>
+			);
+		}
+
+		return (
+			<Box flexDirection="column">
+				<Box borderStyle="single" borderColor="cyan">
+					<Text bold> 🐝 HIVE ─ Review </Text>
+				</Box>
+				<Review task={selectedTask.slug} path={path} />
 				<Box marginTop={1} borderStyle="single" borderColor="cyan" paddingX={2}>
 					<Text dimColor>Press ESC to return to task list</Text>
 				</Box>
@@ -670,7 +712,7 @@ export default function Interactive({ path }: InteractiveProps) {
 			</Box>
 
 			<Box borderStyle="single" borderColor="cyan">
-				<Text dimColor> n:new r:review o:open c:cursor a:claude m:merge d:drop s:settings q:quit </Text>
+				<Text dimColor> n:new  y:sync r:review  o:open  c:cursor  a:claude  m:merge  d:drop  s:settings  q:quit </Text>
 			</Box>
 		</Box>
 	);

@@ -32,7 +32,7 @@ export const DEFAULT_AI_MODELS: Record<AIProvider, string> = {
 	openai: "gpt-5",
 };
 
-const DEFAULT_AI_CONFIG: AIConfig = {
+export const DEFAULT_AI_CONFIG: AIConfig = {
 	enabled: false,
 	provider: "anthropic",
 	model: DEFAULT_AI_MODELS.anthropic,

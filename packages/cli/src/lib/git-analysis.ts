@@ -22,6 +22,7 @@ export interface TaskDiffAnalysis {
 export interface FileOverlap {
 	file: string;
 	tasks: string[];
+	changeType: "added" | "modified" | "deleted" | "mixed";
 }
 
 /**
@@ -76,14 +77,17 @@ export function getOverlappingFiles(
 	taskAnalyses: TaskDiffAnalysis[],
 ): FileOverlap[] {
 	const fileMap = new Map<string, Set<string>>();
+	const fileTypeMap = new Map<string, Set<"added" | "modified" | "deleted">>();
 
-	// Build map of file -> set of task slugs
+	// Build map of file -> set of task slugs and change types
 	for (const analysis of taskAnalyses) {
 		for (const file of analysis.files) {
 			if (!fileMap.has(file.path)) {
 				fileMap.set(file.path, new Set());
+				fileTypeMap.set(file.path, new Set());
 			}
 			fileMap.get(file.path)!.add(analysis.task.slug);
+			fileTypeMap.get(file.path)!.add(file.type);
 		}
 	}
 
@@ -92,9 +96,12 @@ export function getOverlappingFiles(
 
 	for (const [file, taskSet] of fileMap.entries()) {
 		if (taskSet.size > 1) {
+			const types = fileTypeMap.get(file)!;
+			const changeType = types.size > 1 ? "mixed" : Array.from(types)[0];
 			overlaps.push({
 				file,
 				tasks: Array.from(taskSet),
+				changeType,
 			});
 		}
 	}
